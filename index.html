@@ -240,7 +240,7 @@
 <div class="app">
 
   <div class="top-bar">
-    <h1><span class="dot"></span> Dividend Tracker <span style="font-size:11px;font-weight:400;color:var(--text3);margin-left:6px;">v1.4</span></h1>
+    <h1><span class="dot"></span> Dividend Tracker <span style="font-size:11px;font-weight:400;color:var(--text3);margin-left:6px;">v1.5</span></h1>
     <div style="display:flex; align-items:center; gap:10px;">
       <div class="date-badge" id="date-badge"></div>
       <button class="btn btn-sm btn-export" onclick="exportJSON()" title="Exporter les données">
@@ -1038,8 +1038,15 @@ async function enrichWithFinnhub(idx, isin, name) {
   if (btn) { btn.disabled = true; btn.textContent = '...'; }
   if (statusEl) statusEl.textContent = 'Recherche du ticker...';
 
+  // Finnhub free tier: only US symbols supported
+  if (!isin.startsWith('US')) {
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--amber)">ISIN non-US (' + isin.slice(0,2) + ') — Finnhub gratuit couvre uniquement les actions US. Entre le rendement et les mois manuellement.</span>';
+    if (btn) { btn.textContent = 'Non US'; btn.disabled = false; }
+    return;
+  }
+
   try {
-    // Step 1: ISIN -> ticker via profile2 (free)
+    // Step 1: ISIN -> ticker via profile2 (free, US only)
     const profile = await finnhubFetch(
       'https://finnhub.io/api/v1/stock/profile2?isin=' + encodeURIComponent(isin) + '&token=' + key
     );
