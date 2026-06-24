@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dividend Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f8f8f6;
+    --surface: #ffffff;
+    --surface2: #f1f0ea;
+    --border: rgba(0,0,0,0.10);
+    --border2: rgba(0,0,0,0.18);
+    --text: #1a1a18;
+    --text2: #5f5e5a;
+    --text3: #9b9a96;
+    --green: #1d9e75;
+    --green-bg: #e1f5ee;
+    --green-text: #085041;
+    --green-border: #5dcaa5;
+    --amber: #ba7517;
+    --amber-bg: #faeeda;
+    --amber-text: #633806;
+    --red: #a32d2d;
+    --red-bg: #fcebeb;
+    --blue: #185fa5;
+    --blue-bg: #e6f1fb;
+    --blue-text: #0c447c;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #18181a;
+      --surface: #232325;
+      --surface2: #2c2c2e;
+      --border: rgba(255,255,255,0.10);
+      --border2: rgba(255,255,255,0.18);
+      --text: #f0efeb;
+      --text2: #b4b2a9;
+      --text3: #888780;
+      --green: #5dcaa5;
+      --green-bg: #085041;
+      --green-text: #9fe1cb;
+      --green-border: #1d9e75;
+      --amber: #ef9f27;
+      --amber-bg: #633806;
+      --amber-text: #fac775;
+      --red: #f09595;
+      --red-bg: #501313;
+      --blue: #85b7eb;
+      --blue-bg: #0c447c;
+      --blue-text: #b5d4f4;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .app { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  .top-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 2rem; padding-bottom: 1rem;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .top-bar h1 { font-size: 20px; font-weight: 500; display: flex; align-items: center; gap: 10px; }
+  .top-bar h1 span.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); display: inline-block; }
+  .date-badge {
+    font-size: 13px; color: var(--text2);
+    background: var(--surface2); border-radius: var(--radius-sm);
+    padding: 5px 12px; border: 0.5px solid var(--border);
+  }
+  .btn-group { display: flex; gap: 8px; }
+
+  .card {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .card-title {
+    font-size: 13px; font-weight: 500; color: var(--text2);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 1rem; display: flex; align-items: center; gap: 6px;
+  }
+  .card-title svg { width: 15px; height: 15px; }
+
+  .form-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .form-grid-bot { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+  .field input, .field select {
+    width: 100%; font-size: 13px; padding: 8px 10px;
+    border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
+    background: var(--surface2); color: var(--text); outline: none;
+    transition: border-color .15s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--green); }
+
+  .month-picker { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .month-picker label {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 12px; padding: 4px 10px;
+    border: 0.5px solid var(--border2); border-radius: 20px;
+    cursor: pointer; user-select: none; transition: all .15s;
+    background: var(--surface2); color: var(--text2);
+  }
+  .month-picker label:has(input:checked) {
+    background: var(--green-bg); border-color: var(--green-border);
+    color: var(--green-text); font-weight: 500;
+  }
+  .month-picker input { display: none; }
+
+  .btn {
+    font-size: 13px; padding: 8px 16px; cursor: pointer;
+    border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
+    background: transparent; color: var(--text);
+    display: inline-flex; align-items: center; gap: 6px; transition: all .15s;
+  }
+  .btn:hover { background: var(--surface2); }
+  .btn-primary {
+    background: var(--green); border-color: var(--green);
+    color: #fff; font-weight: 500;
+  }
+  .btn-primary:hover { background: #0f6e56; }
+  .btn-sm { font-size: 12px; padding: 5px 10px; }
+  .btn-danger { color: var(--red); border-color: transparent; }
+  .btn-danger:hover { background: var(--red-bg); }
+  .btn-export { color: var(--blue); border-color: transparent; }
+  .btn-export:hover { background: var(--blue-bg); }
+
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+  .metric {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 1rem 1.25rem;
+  }
+  .metric-label { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+  .metric-value { font-size: 22px; font-weight: 500; color: var(--text); }
+  .metric-value.green { color: var(--green); }
+  .metric-value.amber { color: var(--amber); }
+
+  .portfolio-header {
+    display: grid; grid-template-columns: 2.5fr 1fr 1fr 1fr 1fr 80px;
+    gap: 8px; font-size: 11px; color: var(--text3);
+    padding: 0 12px 8px; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .asset-row {
+    display: grid; grid-template-columns: 2.5fr 1fr 1fr 1fr 1fr 80px;
+    gap: 8px; align-items: center; font-size: 13px;
+    padding: 10px 12px; border-radius: var(--radius-sm);
+    border: 0.5px solid var(--border);
+    background: var(--surface2); margin-bottom: 6px;
+    transition: border-color .15s;
+  }
+  .asset-row:hover { border-color: var(--border2); }
+  .asset-name { font-weight: 500; }
+  .asset-detail { color: var(--text2); }
+  .badge {
+    display: inline-block; font-size: 11px; padding: 3px 8px;
+    border-radius: 20px; font-weight: 500;
+  }
+  .badge-green { background: var(--green-bg); color: var(--green-text); }
+  .badge-blue { background: var(--blue-bg); color: var(--blue-text); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber-text); }
+  .badge-purple { background: #eeedfe; color: #3c3489; }
+  @media (prefers-color-scheme: dark) { .badge-purple { background: #3c3489; color: #cecbf6; } }
+
+  .month-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 1.25rem; }
+  .month-cell {
+    background: var(--surface2); border-radius: var(--radius-sm);
+    padding: 0.9rem 1rem; border-left: 3px solid transparent;
+    border: 0.5px solid var(--border); position: relative;
+  }
+  .month-cell.has-div {
+    border-left: 3px solid var(--green);
+    background: var(--surface);
+  }
+  .month-cell.is-current {
+    border-top: 2px solid var(--amber);
+  }
+  .month-cell.is-past { opacity: 0.55; }
+  .month-name {
+    font-size: 11px; color: var(--text3); text-transform: uppercase;
+    letter-spacing: 0.07em; margin-bottom: 6px; display: flex; align-items: center; gap: 5px;
+  }
+  .month-tag {
+    font-size: 10px; padding: 1px 6px; border-radius: 20px; font-weight: 500;
+    background: var(--amber-bg); color: var(--amber-text);
+  }
+  .month-total { font-size: 18px; font-weight: 500; }
+  .month-total.positive { color: var(--text); }
+  .month-total.zero { color: var(--text3); }
+  .month-breakdown { font-size: 11px; color: var(--text2); margin-top: 5px; line-height: 1.6; }
+
+  .chart-wrap { position: relative; width: 100%; height: 200px; }
+
+  .empty-state {
+    text-align: center; padding: 2.5rem; color: var(--text2);
+    font-size: 14px; border: 1px dashed var(--border2);
+    border-radius: var(--radius); margin-top: 0.5rem;
+  }
+
+  .notification {
+    position: fixed; bottom: 1.5rem; right: 1.5rem;
+    background: var(--surface); border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm); padding: 10px 18px;
+    font-size: 13px; font-weight: 500; color: var(--green);
+    border-left: 3px solid var(--green);
+    opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 100;
+  }
+  .notification.show { opacity: 1; }
+
+  .section-hint { font-size: 12px; color: var(--text3); margin-top: 6px; }
+  hr { border: none; border-top: 0.5px solid var(--border); margin: 1.25rem 0; }
+
+  .asset-row.editing { border-color: var(--green); background: var(--green-bg); }
+  .edit-inline { display:grid; grid-template-columns: 2.5fr 1fr 1fr 1fr 1fr 80px; gap:8px; align-items:center; padding:10px 12px; border-radius:var(--radius-sm); border:1.5px solid var(--green); background:var(--green-bg); margin-bottom:6px; }
+  .edit-inline input, .edit-inline select { font-size:12px; padding:5px 8px; border:0.5px solid var(--green-border); border-radius:var(--radius-sm); background:var(--surface); color:var(--text); width:100%; }
+  .edit-inline input:focus, .edit-inline select:focus { outline:none; border-color:var(--green); }
+  .btn-save { color: var(--green-text); border-color: var(--green-border); background: var(--surface); }
+  .btn-save:hover { background: var(--green-bg); }
+
+  .next-month-banner {
+    background: var(--green-bg); border: 0.5px solid var(--green-border);
+    border-radius: var(--radius-sm); padding: 10px 14px;
+    font-size: 13px; color: var(--green-text);
+    display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="top-bar">
+    <h1><span class="dot"></span> Dividend Tracker</h1>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div class="date-badge" id="date-badge"></div>
+      <button class="btn btn-sm btn-export" onclick="exportJSON()" title="Exporter les données">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:15px;height:15px"><path d="M12 3v12m0 0-4-4m4 4 4-4M3 17v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/></svg>
+        Export JSON
+      </button>
+      <label class="btn btn-sm btn-export" style="cursor:pointer;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:15px;height:15px"><path d="M3 7v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7M12 21V9m0 0-4 4m4-4 4 4"/></svg>
+        Import JSON
+        <input type="file" accept=".json" onchange="importJSON(event)" style="display:none;">
+      </label>
+      <label class="btn btn-sm" style="cursor:pointer; color:#7f77dd; border-color:transparent;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:15px;height:15px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Import Trade Republic
+        <input type="file" accept=".csv" onchange="importTR(event)" style="display:none;">
+      </label>
+    </div>
+  </div>
+
+  <div id="tr-modal" style="display:none;">
+    <div style="background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:1.25rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+        <div class="card-title" style="margin:0;font-size:13px;">Actifs detectes depuis Trade Republic</div>
+        <button class="btn btn-sm" onclick="closeTrModal()" style="color:var(--text2);">Fermer</button>
+      </div>
+      <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:1rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:16px;height:16px;flex-shrink:0;color:#7f77dd"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
+        <span style="font-size:12px;color:var(--text2);flex:1;min-width:200px;">Cle API Finnhub (optionnel) — enrichit le rendement et les dates de versement. <a href="https://finnhub.io/register" style="color:#7f77dd;">Obtenir une cle gratuite</a></span>
+        <input type="text" id="finnhub-key" placeholder="ex: cxxxxxxxxxxxxxxxxxxxxxxx" style="font-size:12px;padding:5px 10px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:220px;" oninput="saveFinnhubKey()">
+        <div id="finnhub-status" style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:8px;"><span id="rate-badge" style="display:none;font-size:11px;padding:2px 8px;border-radius:20px;background:var(--surface2);border:0.5px solid var(--border2);">— req/min restantes</span></div>
+      </div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:1rem;">Capital pre-rempli depuis tes achats reels. Ajuste si besoin, puis clique Enrichir pour recuperer rendement + dates via Finnhub (optionnel), ou ajoute directement.</p>
+      <div id="tr-results"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
+      Ajouter un actif
+    </div>
+    <div class="form-grid">
+      <div class="field"><label>Nom (ETF / action)</label><input type="text" id="f-name" placeholder="ex: JEPI, CW8, MSFT…"></div>
+      <div class="field"><label>Capital initial (€)</label><input type="number" id="f-capital" placeholder="1 000" min="0" step="100"></div>
+      <div class="field"><label>DCA mensuel (€)</label><input type="number" id="f-dca" placeholder="100" min="0" step="50"></div>
+      <div class="field"><label>Rendement annuel (%)</label><input type="number" id="f-yield" placeholder="4.5" min="0" step="0.1"></div>
+    </div>
+    <div class="form-grid-bot">
+      <div class="field">
+        <label>Fréquence de versement</label>
+        <select id="f-freq" onchange="onFreqChange()">
+          <option value="monthly">Mensuel (jan → déc)</option>
+          <option value="quarterly">Trimestriel (mar, juin, sep, déc)</option>
+          <option value="quarterly2">Trimestriel (jan, avr, juil, oct)</option>
+          <option value="semi">Semestriel (juin, déc)</option>
+          <option value="annual">Annuel (déc)</option>
+          <option value="custom">Personnalisé…</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Couleur / catégorie</label>
+        <select id="f-color">
+          <option value="green">Vert (actions défensives)</option>
+          <option value="blue">Bleu (ETF)</option>
+          <option value="amber">Ambre (haut rendement)</option>
+          <option value="purple">Violet (obligations)</option>
+        </select>
+      </div>
+    </div>
+    <div id="custom-months" style="display:none; margin-bottom:12px;">
+      <div style="font-size:12px; color:var(--text2); margin-bottom:6px;">Mois de versement</div>
+      <div class="month-picker" id="month-checks">
+        <label><input type="checkbox" value="1">Jan</label>
+        <label><input type="checkbox" value="2">Fév</label>
+        <label><input type="checkbox" value="3">Mar</label>
+        <label><input type="checkbox" value="4">Avr</label>
+        <label><input type="checkbox" value="5">Mai</label>
+        <label><input type="checkbox" value="6">Juin</label>
+        <label><input type="checkbox" value="7">Juil</label>
+        <label><input type="checkbox" value="8">Août</label>
+        <label><input type="checkbox" value="9">Sep</label>
+        <label><input type="checkbox" value="10">Oct</label>
+        <label><input type="checkbox" value="11">Nov</label>
+        <label><input type="checkbox" value="12">Déc</label>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-primary" onclick="addAsset()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>
+        Ajouter au portefeuille
+      </button>
+      <button class="btn" onclick="resetForm()">Effacer</button>
+    </div>
+  </div>
+
+  <div id="portfolio-section" style="display:none;" class="card">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:15px;height:15px"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      Portefeuille
+    </div>
+    <div class="portfolio-header">
+      <span>Actif</span><span>Capital</span><span>DCA/mois</span><span>Rendement</span><span>Fréquence</span><span style="text-align:right;">Actions</span>
+    </div>
+    <div id="assets-list"></div>
+  </div>
+
+  <div id="results-section" style="display:none;">
+    <div class="metrics" id="metrics-bar"></div>
+    <div id="next-banner"></div>
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:15px;height:15px"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Calendrier des dividendes — 12 mois dès <span id="start-month-label" style="color:var(--green); font-style:normal;"></span>
+      </div>
+      <div class="month-grid" id="month-grid"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:15px;height:15px"><path d="M3 3v18h18"/><path d="m7 16 4-4 4 4 4-4"/></svg>
+        Projection mensuelle (€)
+      </div>
+      <div id="chart-legend" style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:10px; font-size:12px; color:var(--text2);"></div>
+      <div class="chart-wrap"><canvas id="divChart" role="img" aria-label="Graphique des dividendes mensuels projetés"></canvas></div>
+    </div>
+  </div>
+
+  <div id="empty-state" class="empty-state">
+    Ajoute ton premier ETF ou action pour démarrer la projection.
+  </div>
+</div>
+
+<div class="notification" id="notif"></div>
+
+<script>
+const STORAGE_KEY = 'dividend_tracker_v2';
+const FREQ_MONTHS = {
+  monthly: [1,2,3,4,5,6,7,8,9,10,11,12],
+  quarterly: [3,6,9,12],
+  quarterly2: [1,4,7,10],
+  semi: [6,12],
+  annual: [12]
+};
+const FREQ_LABELS = {
+  monthly: 'Mensuel', quarterly: 'Trim. (mar…)', quarterly2: 'Trim. (jan…)',
+  semi: 'Semestriel', annual: 'Annuel', custom: 'Personnalisé'
+};
+const MONTH_NAMES = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
+const MONTH_NAMES_LONG = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const COLOR_MAP = {
+  green: { badge: 'badge-green', bar: '#1d9e75', barLight: '#1d9e7533' },
+  blue:  { badge: 'badge-blue',  bar: '#378add', barLight: '#378add33' },
+  amber:  { badge: 'badge-amber',  bar: '#ba7517', barLight: '#ba751733' },
+  purple: { badge: 'badge-purple', bar: '#7f77dd', barLight: '#7f77dd33' }
+};
+
+let assets = [];
+let chart = null;
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(assets)); } catch(e) {}
+}
+function load() {
+  try {
+    const d = localStorage.getItem(STORAGE_KEY);
+    if (d) assets = JSON.parse(d);
+  } catch(e) { assets = []; }
+}
+
+function notify(msg) {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+function onFreqChange() {
+  const v = document.getElementById('f-freq').value;
+  document.getElementById('custom-months').style.display = v === 'custom' ? 'block' : 'none';
+}
+
+function getCustomMonths() {
+  return Array.from(document.querySelectorAll('#month-checks input:checked')).map(cb => parseInt(cb.value));
+}
+
+function addAsset() {
+  const name = document.getElementById('f-name').value.trim();
+  const capital = parseFloat(document.getElementById('f-capital').value) || 0;
+  const dca = parseFloat(document.getElementById('f-dca').value) || 0;
+  const yld = parseFloat(document.getElementById('f-yield').value) || 0;
+  const freq = document.getElementById('f-freq').value;
+  const color = document.getElementById('f-color').value;
+
+  if (!name) { alert('Renseigne un nom pour l\'actif.'); return; }
+  if (yld === 0) { alert('Le rendement ne peut pas être 0%.'); return; }
+
+  let months = freq === 'custom' ? getCustomMonths() : FREQ_MONTHS[freq];
+  if (!months || months.length === 0) { alert('Sélectionne au moins un mois de versement.'); return; }
+
+  assets.push({ id: Date.now(), name, capital, dca, yld, freq, months, color: color || 'green' });
+  save();
+  render();
+  resetForm();
+  notify('✓ ' + name + ' ajouté au portefeuille');
+}
+
+function removeAsset(id) {
+  assets = assets.filter(a => a.id !== id);
+  save();
+  render();
+  notify('Actif supprimé');
+}
+
+function resetForm() {
+  ['f-name','f-capital','f-dca','f-yield'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-freq').value = 'monthly';
+  document.getElementById('f-color').value = 'green';
+  document.getElementById('custom-months').style.display = 'none';
+  document.querySelectorAll('#month-checks input').forEach(cb => cb.checked = false);
+}
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify({ assets, exportedAt: new Date().toISOString() }, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url;
+  a.download = 'dividend_tracker_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click(); URL.revokeObjectURL(url);
+  notify('Export JSON téléchargé');
+}
+
+function importJSON(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.assets && Array.isArray(data.assets)) {
+        assets = data.assets;
+        save(); render();
+        notify('✓ ' + assets.length + ' actifs importés');
+      } else { alert('Fichier JSON invalide.'); }
+    } catch { alert('Erreur de lecture du fichier.'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function fmtMoney(v, decimals=2) {
+  return v.toLocaleString('fr-FR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + ' €';
+}
+
+function render() {
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+
+  document.getElementById('date-badge').textContent =
+    MONTH_NAMES_LONG[currentMonth-1] + ' ' + currentYear;
+
+  const hasAssets = assets.length > 0;
+  document.getElementById('empty-state').style.display = hasAssets ? 'none' : 'block';
+  document.getElementById('portfolio-section').style.display = hasAssets ? 'block' : 'none';
+  document.getElementById('results-section').style.display = hasAssets ? 'block' : 'none';
+
+  if (!hasAssets) { if (chart) { chart.destroy(); chart = null; } return; }
+
+  renderPortfolio();
+  computeAndRenderResults(currentMonth, currentYear);
+}
+
+function renderPortfolio() {
+  const el = document.getElementById('assets-list');
+  el.innerHTML = assets.map(a => {
+    const cm = COLOR_MAP[a.color] || COLOR_MAP.green;
+    return `
+    <div class="asset-row" id="row-${a.id}">
+      <span class="asset-name">${a.name}</span>
+      <span class="asset-detail">${fmtMoney(a.capital, 0)}</span>
+      <span class="asset-detail">${fmtMoney(a.dca, 0)}</span>
+      <span><span class="badge ${cm.badge}">${a.yld.toFixed(1)}%</span></span>
+      <span class="asset-detail" style="font-size:12px;">${FREQ_LABELS[a.freq]}</span>
+      <span style="text-align:right; display:flex; gap:4px; justify-content:flex-end;">
+        <button class="btn btn-sm" onclick="editAsset(${a.id})" title="Modifier" style="color:var(--blue);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:14px;height:14px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="btn btn-sm btn-danger" onclick="removeAsset(${a.id})" title="Supprimer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:14px;height:14px"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+        </button>
+      </span>
+    </div>`;
+  }).join('');
+}
+
+function editAsset(id) {
+  const a = assets.find(x => x.id === id);
+  if (!a) return;
+  const el = document.getElementById('row-' + id);
+  const freqOpts = Object.entries(FREQ_LABELS).map(([k,v]) =>
+    `<option value="${k}" ${a.freq===k?'selected':''}>${v}</option>`).join('');
+  const MN = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
+  const monthChecks = MN.map((m,i) => {
+    const checked = (a.months||[]).includes(i+1) ? 'checked' : '';
+    return `<label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 8px;border:0.5px solid var(--green-border);border-radius:20px;cursor:pointer;background:${checked?'var(--green-bg)':'var(--surface)'};color:${checked?'var(--green-text)':'var(--text2)'};" id="elbl-${id}-${i+1}">
+      <input type="checkbox" value="${i+1}" ${checked} style="display:none;" onchange="toggleEditMonth(${id},${i+1},this)">${m}
+    </label>`;
+  }).join('');
+  const showCustom = a.freq === 'custom';
+  el.outerHTML = `
+  <div style="border:1.5px solid var(--green);border-radius:var(--radius-sm);background:var(--green-bg);margin-bottom:6px;padding:10px 12px;" id="row-${id}">
+    <div style="display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 1fr 80px;gap:8px;align-items:center;margin-bottom:8px;">
+      <input id="e-name-${id}" value="${a.name}" placeholder="Nom" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
+      <input id="e-capital-${id}" type="number" value="${a.capital}" placeholder="Capital €" step="50" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
+      <input id="e-dca-${id}" type="number" value="${a.dca}" placeholder="DCA €" step="50" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
+      <input id="e-yield-${id}" type="number" value="${a.yld}" placeholder="Rdt %" step="0.1" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
+      <select id="e-freq-${id}" onchange="onEditFreqChange(${id})" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">${freqOpts}</select>
+      <span style="display:flex;gap:4px;justify-content:flex-end;">
+        <button class="btn btn-sm btn-save" onclick="saveAsset(${id})" title="Enregistrer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="m5 13 4 4L19 7"/></svg>
+        </button>
+        <button class="btn btn-sm" onclick="renderPortfolio()" title="Annuler" style="color:var(--text2);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </span>
+    </div>
+    <div id="e-custompicker-${id}" style="display:${showCustom?'flex':'none'};flex-wrap:wrap;gap:5px;padding-top:6px;border-top:0.5px solid var(--green-border);">
+      ${monthChecks}
+    </div>
+  </div>`;
+  document.getElementById('e-name-' + id).focus();
+}
+
+function onEditFreqChange(id) {
+  const freq = document.getElementById('e-freq-' + id).value;
+  document.getElementById('e-custompicker-' + id).style.display = freq === 'custom' ? 'flex' : 'none';
+}
+
+function toggleEditMonth(id, month, cb) {
+  const lbl = document.getElementById('elbl-' + id + '-' + month);
+  if (cb.checked) {
+    lbl.style.background = 'var(--green-bg)';
+    lbl.style.color = 'var(--green-text)';
+  } else {
+    lbl.style.background = 'var(--surface)';
+    lbl.style.color = 'var(--text2)';
+  }
+}
+
+function saveAsset(id) {
+  const a = assets.find(x => x.id === id);
+  if (!a) return;
+  const name = document.getElementById('e-name-' + id).value.trim();
+  const capital = parseFloat(document.getElementById('e-capital-' + id).value) || 0;
+  const dca = parseFloat(document.getElementById('e-dca-' + id).value) || 0;
+  const yld = parseFloat(document.getElementById('e-yield-' + id).value) || 0;
+  const freq = document.getElementById('e-freq-' + id).value;
+  if (!name || yld === 0) { alert('Nom et rendement requis.'); return; }
+  let months;
+  if (freq === 'custom') {
+    months = Array.from(document.querySelectorAll(`#e-custompicker-${id} input:checked`)).map(cb => parseInt(cb.value));
+    if (months.length === 0) { alert('Sélectionne au moins un mois.'); return; }
+  } else {
+    months = FREQ_MONTHS[freq];
+  }
+  Object.assign(a, { name, capital, dca, yld, freq, months });
+  save();
+  render();
+  notify('✓ ' + name + ' mis à jour');
+}
+
+function computeAndRenderResults(startMonth, startYear) {
+  const monthlyTotals = new Array(12).fill(0);
+  const monthlyBreakdowns = Array.from({length:12}, () => []);
+
+  assets.forEach(a => {
+    let runningCapital = a.capital;
+    for (let i = 0; i < 12; i++) {
+      runningCapital += a.dca;
+      const mNum = ((startMonth - 1 + i) % 12) + 1;
+      if (a.months.includes(mNum)) {
+        const numPayouts = a.months.length;
+        const divAmount = (runningCapital * (a.yld / 100)) / numPayouts;
+        monthlyTotals[i] += divAmount;
+        monthlyBreakdowns[i].push({ name: a.name, amount: divAmount, color: a.color });
+      }
+    }
+  });
+
+  const totalAnnual = monthlyTotals.reduce((s,v) => s+v, 0);
+  const totalCapital = assets.reduce((s,a) => s+a.capital, 0);
+  const totalDCA = assets.reduce((s,a) => s+a.dca, 0);
+  const avgMonthly = totalAnnual / 12;
+  const nextPayIdx = monthlyTotals.findIndex(v => v > 0);
+
+  document.getElementById('start-month-label').textContent = MONTH_NAMES_LONG[startMonth-1] + ' ' + startYear;
+
+  document.getElementById('metrics-bar').innerHTML = `
+    <div class="metric"><div class="metric-label">Capital investi</div><div class="metric-value">${fmtMoney(totalCapital, 0)}</div></div>
+    <div class="metric"><div class="metric-label">DCA mensuel total</div><div class="metric-value amber">${fmtMoney(totalDCA, 0)}</div></div>
+    <div class="metric"><div class="metric-label">Dividendes / an (proj.)</div><div class="metric-value green">${fmtMoney(totalAnnual)}</div></div>
+    <div class="metric"><div class="metric-label">Moyenne mensuelle</div><div class="metric-value">${fmtMoney(avgMonthly)}</div></div>
+  `;
+
+  const nextBanner = document.getElementById('next-banner');
+  if (nextPayIdx >= 0 && nextPayIdx <= 2) {
+    const nextMon = ((startMonth - 1 + nextPayIdx) % 12);
+    nextBanner.innerHTML = `<div class="next-month-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:16px;height:16px;flex-shrink:0"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg>
+      Prochain versement : <strong>${MONTH_NAMES_LONG[nextMon]}</strong> — ${fmtMoney(monthlyTotals[nextPayIdx])}
+    </div>`;
+  } else { nextBanner.innerHTML = ''; }
+
+  const grid = document.getElementById('month-grid');
+  grid.innerHTML = monthlyTotals.map((total, i) => {
+    const mIdx = (startMonth - 1 + i) % 12;
+    const mYear = startYear + Math.floor((startMonth - 1 + i) / 12);
+    const isCurrent = i === 0;
+    const isPast = false;
+    const hasdiv = total > 0;
+    const breakdown = monthlyBreakdowns[i]
+      .map(b => `<span style="color:${COLOR_MAP[b.color]?.bar || '#1d9e75'}">${b.name}</span> ${fmtMoney(b.amount)}`)
+      .join('<br>');
+    return `
+      <div class="month-cell ${hasdiv ? 'has-div' : ''} ${isCurrent ? 'is-current' : ''}">
+        <div class="month-name">
+          ${MONTH_NAMES[mIdx]} ${mYear !== startYear ? '<span style="font-size:10px;color:var(--text3)">'+mYear+'</span>' : ''}
+          ${isCurrent ? '<span class="month-tag">Maintenant</span>' : ''}
+        </div>
+        <div class="month-total ${hasdiv ? 'positive' : 'zero'}">${hasdiv ? fmtMoney(total) : '—'}</div>
+        ${breakdown ? `<div class="month-breakdown">${breakdown}</div>` : ''}
+      </div>`;
+  }).join('');
+
+  renderChart(startMonth, startYear, monthlyTotals, monthlyBreakdowns);
+}
+
+function renderChart(startMonth, startYear, totals, breakdowns) {
+  const labels = Array.from({length:12}, (_,i) => {
+    const mIdx = (startMonth - 1 + i) % 12;
+    const yr = startYear + Math.floor((startMonth - 1 + i) / 12);
+    return MONTH_NAMES[mIdx] + (yr !== startYear ? ' '+String(yr).slice(2) : '');
+  });
+
+  const bgColors = totals.map((v,i) => {
+    if (i === 0) return '#ba7517aa';
+    return v > 0 ? '#1d9e75aa' : '#88878033';
+  });
+  const borderColors = totals.map((v,i) => {
+    if (i === 0) return '#ba7517';
+    return v > 0 ? '#0f6e56' : '#b4b2a9';
+  });
+
+  const legend = document.getElementById('chart-legend');
+  legend.innerHTML = `
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#1d9e75"></span>Dividende versé</span>
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#ba7517"></span>Mois en cours</span>
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#88878033;border:0.5px solid #b4b2a9"></span>Aucun versement</span>
+  `;
+
+  if (chart) chart.destroy();
+  chart = new Chart(document.getElementById('divChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Dividendes (€)',
+        data: totals.map(v => parseFloat(v.toFixed(2))),
+        backgroundColor: bgColors,
+        borderColor: borderColors,
+        borderWidth: 1,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.parsed.y > 0 ? fmtMoney(ctx.parsed.y) : 'Aucun versement'
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { autoSkip: false, maxRotation: 30, font: { size: 11 } }, grid: { display: false } },
+        y: {
+          ticks: { callback: v => v.toFixed(0) + ' €', font: { size: 11 } },
+          grid: { color: 'rgba(136,135,128,0.12)' }
+        }
+      }
+    }
+  });
+}
+
+// ── TRADE REPUBLIC CSV IMPORT ─────────────────────────────────────────────
+
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const headers = splitCSVLine(lines[0]).map(h => h.replace(/^"|"$/g,'').trim());
+  return lines.slice(1).map(line => {
+    const vals = splitCSVLine(line).map(v => v.replace(/^"|"$/g,'').trim());
+    const obj = {};
+    headers.forEach((h,i) => obj[h] = vals[i] || '');
+    return obj;
+  });
+}
+
+function splitCSVLine(line) {
+  const result = []; let cur = ''; let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
+    else { cur += c; }
+  }
+  result.push(cur);
+  return result;
+}
+
+function importTR(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const rows = parseCSV(ev.target.result);
+      processTRRows(rows);
+    } catch(err) { alert('Erreur lecture CSV: ' + err.message); }
+  };
+  reader.readAsText(file, 'utf-8');
+  e.target.value = '';
+}
+
+function processTRRows(rows) {
+  // 1. Calcul des parts actuelles par ISIN (BUY/SELL/SPLIT/MIGRATION)
+  const holdings = {};
+  const invested = {};
+  const namesMap = {};
+  rows.forEach(r => {
+    const sym = (r.symbol || '').trim();
+    if (!sym) return;
+    const t = (r.type || '').toUpperCase().trim();
+    const shares = parseFloat(r.shares || 0);
+    const amount = Math.abs(parseFloat(r.amount || 0));
+    const name = (r.name || '').trim();
+    if (name) namesMap[sym] = name;
+    if (!holdings[sym]) { holdings[sym] = 0; invested[sym] = 0; }
+    if (t === 'BUY') { holdings[sym] += shares; invested[sym] += amount; }
+    else if (t === 'SELL') { holdings[sym] += shares; }
+    else if (t === 'SPLIT' || t === 'MIGRATION') { holdings[sym] += shares; }
+  });
+
+  // 2. Lignes dividende uniquement
+  const divRows = rows.filter(r => {
+    const type = (r.type || '').toUpperCase().trim();
+    const desc = (r.description || '').toLowerCase();
+    return type === 'DIVIDEND' || type === 'DIVIDENDS' || desc.includes('dividend');
+  });
+
+  if (divRows.length === 0) {
+    alert('Aucun dividende trouve dans ce fichier CSV.\nVerifie que tu as bien selectionne un export Trade Republic complet.');
+    return;
+  }
+
+  // 3. Groupe par ISIN
+  const bySymbol = {};
+  divRows.forEach(r => {
+    const isin = (r.symbol || '').trim();
+    const name = (r.name || isin || '').trim();
+    const key = isin || name;
+    const amount = Math.abs(parseFloat((r.amount || '0').replace(',','.'))) || 0;
+    const date = (r.date || (r.datetime || '').slice(0,10) || '').slice(0,10);
+    if (!key) return;
+    if (!bySymbol[key]) bySymbol[key] = { sym: isin, name, payments: [] };
+    bySymbol[key].payments.push({ amount, date });
+  });
+
+  // 4. Build detected list — skip if sold (shares <= 0.001)
+  const cutoff = new Date(); cutoff.setFullYear(cutoff.getFullYear() - 1);
+  const detected = [];
+  const soldSkipped = [];
+
+  Object.values(bySymbol).forEach(entry => {
+    const sh = holdings[entry.sym] || 0;
+    if (sh < 0.001) { soldSkipped.push(entry.name); return; }
+
+    const payments = entry.payments.sort((a,b) => a.date.localeCompare(b.date));
+    const last12 = payments.filter(p => new Date(p.date) >= cutoff);
+    const annualDiv = last12.reduce((s,p) => s + p.amount, 0);
+    const capitalEst = Math.round(invested[entry.sym] || 0);
+
+    const freq = payments.length >= 10 ? 'monthly'
+               : payments.length >= 4  ? 'quarterly2'
+               : payments.length >= 2  ? 'semi'
+               : 'annual';
+
+    detected.push({ sym: entry.sym, name: entry.name, annualDiv, payments, freq, totalPayments: payments.length, capitalEst, shares: sh });
+  });
+
+  renderTRModal(detected, soldSkipped);
+}
+function renderTRModal(detected, soldSkipped) {
+  loadFinnhubKey();
+  const MN = ['Jan','Fev','Mar','Avr','Mai','Juin','Juil','Aout','Sep','Oct','Nov','Dec'];
+  const el = document.getElementById('tr-results');
+  let html = '';
+
+  if (detected.length === 0) {
+    html += '<p style="color:var(--text2);font-size:13px;margin-bottom:10px;">Tous les actifs avec dividendes ont ete vendus ou aucun trouve.</p>';
+  }
+
+  detected.forEach((d, i) => {
+    const capVal = d.capitalEst || 0;
+    const yldGuess = capVal > 0 && d.annualDiv > 0 ? ((d.annualDiv/capVal)*100).toFixed(2) : '';
+    const freqOpts = [
+      ['monthly','Mensuel'],['quarterly','Trim. (mar…)'],['quarterly2','Trim. (jan…)'],
+      ['semi','Semestriel'],['annual','Annuel'],['custom','Personnalise']
+    ].map(([v,l]) => `<option value="${v}" ${d.freq===v?'selected':''}>${l}</option>`).join('');
+
+    const monthPicker = MN.map((m,mi) => `
+      <label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 7px;border:0.5px solid var(--border2);border-radius:20px;cursor:pointer;background:var(--surface);color:var(--text2);" id="tr-mlbl-${i}-${mi+1}">
+        <input type="checkbox" value="${mi+1}" style="display:none;" onchange="trToggleMonth(${i},${mi+1},this)">${m}
+      </label>`).join('');
+
+    html += `
+    <div style="border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:12px;margin-bottom:10px;background:var(--surface2);">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <div style="min-width:160px;">
+          <div style="font-size:13px;font-weight:500;">${d.name}</div>
+          <div style="font-size:11px;color:var(--text3);">${d.sym} · ${d.shares.toFixed(4)} parts · ${d.totalPayments} versement(s) TR</div>
+          ${d.annualDiv>0 ? `<div style="font-size:12px;color:var(--green);margin-top:3px;">Div. TR (12m): ${d.annualDiv.toFixed(2)} €</div>` : '<div style="font-size:11px;color:var(--text3);margin-top:3px;">Pas de versement dans les 12 derniers mois</div>'}
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+          <div class="field" style="min-width:110px;">
+            <label style="font-size:11px;color:var(--text3);">Capital investi (€)</label>
+            <input type="number" id="tr-cap-${i}" value="${capVal}" step="10" min="0"
+              style="font-size:12px;padding:5px 8px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;"
+              oninput="trRecalcYield(${i},${d.annualDiv})">
+          </div>
+          <div class="field" style="min-width:90px;">
+            <label style="font-size:11px;color:var(--text3);">DCA/mois (€)</label>
+            <input type="number" id="tr-dca-${i}" value="0" step="10" min="0"
+              style="font-size:12px;padding:5px 8px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
+          </div>
+          <div class="field" style="min-width:90px;">
+            <label style="font-size:11px;color:var(--text3);">Rendement % <span style="color:var(--text3);font-weight:400;">(modifiable)</span></label>
+            <input type="number" id="tr-yield-${i}" value="${yldGuess}" step="0.1" min="0" placeholder="ex: 4.5"
+              style="font-size:12px;padding:5px 8px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
+          </div>
+          <div class="field" style="min-width:120px;">
+            <label style="font-size:11px;color:var(--text3);">Frequence</label>
+            <select id="tr-freq-${i}" onchange="trOnFreqChange(${i})"
+              style="font-size:12px;padding:5px 8px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
+              ${freqOpts}
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+          <button id="enrich-btn-${i}" class="btn btn-sm" onclick="enrichWithFinnhub(${i},'${d.sym}','${d.name.replace(/'/g,'').replace(/"/g,'')}')"
+            style="color:#7f77dd;border-color:#7f77dd44;white-space:nowrap;">
+            ✦ Enrichir via API
+          </button>
+          <button class="btn btn-sm btn-primary" id="tr-add-btn-${i}"
+            onclick="addTRAsset(${i})"
+            style="white-space:nowrap;">
+            + Ajouter
+          </button>
+        </div>
+      </div>
+      <div id="enrich-status-${i}" style="font-size:11px;margin-top:6px;"></div>
+      <div id="tr-mpicker-${i}" style="display:none;flex-wrap:wrap;gap:4px;margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);">
+        <span style="font-size:11px;color:var(--text3);width:100%;margin-bottom:3px;">Mois de versement (personnalise)</span>
+        ${monthPicker}
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px;padding-top:6px;border-top:0.5px solid var(--border);">
+        ${d.payments.slice(-5).map(p => `<span style="margin-right:10px;">${p.date} → ${p.amount.toFixed(2)} €</span>`).join('')}
+        ${d.payments.length > 5 ? `<span>+${d.payments.length-5} autres</span>` : ''}
+      </div>
+    </div>`;
+  });
+
+  if (soldSkipped && soldSkipped.length > 0) {
+    html += `<div style="font-size:12px;color:var(--text3);margin-top:10px;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);">
+      <strong>Vendus / exclus :</strong> ${soldSkipped.join(', ')}
+    </div>`;
+  }
+
+  el.innerHTML = html;
+  document.getElementById('tr-modal').style.display = 'block';
+  document.getElementById('tr-modal').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function trRecalcYield(idx, annualDiv) {
+  const cap = parseFloat((document.getElementById('tr-cap-'+idx)||{}).value) || 0;
+  const yldEl = document.getElementById('tr-yield-'+idx);
+  if (cap > 0 && annualDiv > 0 && yldEl) {
+    yldEl.value = ((annualDiv/cap)*100).toFixed(2);
+  }
+}
+
+function trOnFreqChange(idx) {
+  const freq = document.getElementById('tr-freq-'+idx).value;
+  const picker = document.getElementById('tr-mpicker-'+idx);
+  if (picker) picker.style.display = freq === 'custom' ? 'flex' : 'none';
+}
+
+function trToggleMonth(idx, month, cb) {
+  const lbl = document.getElementById('tr-mlbl-'+idx+'-'+month);
+  if (!lbl) return;
+  if (cb.checked) { lbl.style.background='var(--green-bg)'; lbl.style.color='var(--green-text)'; }
+  else { lbl.style.background='var(--surface)'; lbl.style.color='var(--text2)'; }
+}
+function addTRAsset(i) {
+  const name   = (document.getElementById('tr-add-btn-'+i).closest('div[style]').querySelector('[style*="font-weight:500"]') || {textContent: 'Actif'}).textContent.trim() || 'Actif';
+  const capital = parseFloat((document.getElementById('tr-cap-'+i)||{}).value) || 0;
+  const dca     = parseFloat((document.getElementById('tr-dca-'+i)||{}).value) || 0;
+  const yld     = parseFloat((document.getElementById('tr-yield-'+i)||{}).value) || 0;
+  const freq    = (document.getElementById('tr-freq-'+i)||{}).value || 'annual';
+
+  if (capital === 0) { alert('Capital requis pour ' + name); document.getElementById('tr-cap-'+i).focus(); return; }
+  if (yld === 0)     { alert('Rendement requis pour ' + name + ' — entre-le manuellement ou clique Enrichir via API.'); document.getElementById('tr-yield-'+i).focus(); return; }
+
+  let months;
+  if (freq === 'custom') {
+    const picker = document.getElementById('tr-mpicker-'+i);
+    months = picker ? Array.from(picker.querySelectorAll('input:checked')).map(cb=>parseInt(cb.value)) : [];
+    if (months.length === 0) { alert('Selectionne au moins un mois de versement.'); return; }
+  } else {
+    months = FREQ_MONTHS[freq];
+  }
+
+  // Get name from the card header (first bold div)
+  const card = document.getElementById('tr-add-btn-'+i) ? document.getElementById('tr-add-btn-'+i).closest('div[style*="border:0.5px"]') : null;
+  const nameEl = card ? card.querySelector('[style*="font-weight:500"]') : null;
+  const finalName = nameEl ? nameEl.textContent.trim() : ('Actif ' + i);
+
+  assets.push({ id: Date.now(), name: finalName, capital, dca, yld, freq, months, color: 'blue', trImported: true });
+  save();
+  render();
+  notify('Ajoute : ' + finalName);
+
+  const btn = document.getElementById('tr-add-btn-'+i);
+  if (btn) { btn.textContent = 'Ajoute'; btn.disabled = true; btn.style.opacity = '0.5'; }
+}
+
+// ── FINNHUB API ENRICHMENT ────────────────────────────────────────────────
+
+const DEFAULT_FINNHUB_KEY = '';
+
+function saveFinnhubKey() {
+  const k = document.getElementById('finnhub-key').value.trim();
+  try { localStorage.setItem('finnhub_api_key', k); } catch(e) {}
+}
+
+function loadFinnhubKey() {
+  try {
+    const stored = localStorage.getItem('finnhub_api_key') || '';
+    const k = stored || DEFAULT_FINNHUB_KEY;
+    const el = document.getElementById('finnhub-key');
+    if (el) el.value = k;
+    return k;
+  } catch(e) { return DEFAULT_FINNHUB_KEY; }
+}
+
+function updateRateBadge(remaining) {
+  const badge = document.getElementById('rate-badge');
+  if (!badge) return;
+  badge.style.display = 'inline-block';
+  const n = parseInt(remaining);
+  badge.textContent = n + ' req/min restantes';
+  if (n > 30) {
+    badge.style.background = 'var(--green-bg)'; badge.style.color = 'var(--green-text)'; badge.style.borderColor = 'var(--green-border)';
+  } else if (n > 10) {
+    badge.style.background = 'var(--amber-bg)'; badge.style.color = 'var(--amber-text)'; badge.style.borderColor = 'var(--amber)';
+  } else {
+    badge.style.background = 'var(--red-bg)'; badge.style.color = 'var(--red)'; badge.style.borderColor = 'var(--red)';
+  }
+}
+
+async function finnhubFetch(url) {
+  const res = await fetch(url);
+  const remaining = res.headers.get('X-Ratelimit-Remaining') || res.headers.get('x-ratelimit-remaining');
+  if (remaining !== null) updateRateBadge(remaining);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+
+async function enrichWithFinnhub(idx, isin, name) {
+  const key = (document.getElementById('finnhub-key').value || '').trim() || DEFAULT_FINNHUB_KEY;
+  const btn = document.getElementById('enrich-btn-' + idx);
+  const statusEl = document.getElementById('enrich-status-' + idx);
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+  if (statusEl) statusEl.textContent = 'Recherche du ticker...';
+
+  try {
+    // Step 1: ISIN -> ticker
+    const profile = await finnhubFetch(
+      'https://finnhub.io/api/v1/stock/profile2?isin=' + encodeURIComponent(isin) + '&token=' + key
+    );
+
+    if (!profile || !profile.ticker) {
+      if (statusEl) statusEl.innerHTML = '<span style="color:var(--amber)">Non trouve sur Finnhub — entre le rendement et les mois manuellement</span>';
+      if (btn) { btn.textContent = 'Non trouve'; }
+      return;
+    }
+
+    const ticker = profile.ticker;
+    if (statusEl) statusEl.textContent = 'Ticker: ' + ticker + ' — chargement dividendes...';
+
+    // Step 2: dividend history
+    const divData = await finnhubFetch(
+      'https://finnhub.io/api/v1/stock/dividend2?symbol=' + encodeURIComponent(ticker) + '&token=' + key
+    );
+
+    const dividends = ((divData && divData.data) ? divData.data : [])
+      .filter(d => d.payDate || d.date)
+      .sort((a,b) => (a.payDate || a.date).localeCompare(b.payDate || b.date));
+
+    if (!dividends || dividends.length === 0) {
+      // Fallback: basic financials for yield
+      const metrics = await finnhubFetch(
+        'https://finnhub.io/api/v1/stock/metric?symbol=' + encodeURIComponent(ticker) + '&metric=all&token=' + key
+      );
+      const yld = metrics && metrics.metric
+        ? (metrics.metric.dividendYieldIndicatedAnnual || metrics.metric['52WeekDividendYield'] || 0)
+        : 0;
+      if (yld > 0) {
+        const yldEl = document.getElementById('tr-yield-' + idx);
+        if (yldEl) yldEl.value = yld.toFixed(2);
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">Rendement: ' + yld.toFixed(2) + '% — pas de dates precises disponibles</span>';
+      } else {
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--amber)">Aucun dividende trouve — entre les donnees manuellement</span>';
+      }
+      if (btn) btn.textContent = 'Enrichi';
+      return;
+    }
+
+    // Compute annualised yield from last 12 months
+    const cutoff = new Date(); cutoff.setFullYear(cutoff.getFullYear() - 1);
+    const last12 = dividends.filter(d => new Date(d.payDate || d.date) >= cutoff);
+    const annualAmt = last12.reduce((s,d) => s + (d.amount || 0), 0);
+
+    const cap = parseFloat((document.getElementById('tr-cap-' + idx) || {}).value) || 0;
+    if (cap > 0 && annualAmt > 0) {
+      const yld = ((annualAmt / cap) * 100).toFixed(2);
+      const yldEl = document.getElementById('tr-yield-' + idx);
+      if (yldEl) yldEl.value = yld;
+    }
+
+    // Detect payment months from last 12 dividends
+    const recentMonths = [...new Set(
+      dividends.slice(-12).map(d => new Date(d.payDate || d.date).getMonth() + 1)
+    )].sort((a,b) => a-b);
+
+    // Update frequency + custom month picker
+    updateMonthPicker(idx, recentMonths);
+
+    const lastDiv = dividends[dividends.length - 1];
+    const lastDate = lastDiv.payDate || lastDiv.date;
+    const lastAmt  = (lastDiv.amount || 0).toFixed(3);
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">OK — ' + ticker + ' · ' + dividends.length + ' versements · dernier: ' + lastDate + ' (' + lastAmt + ') · mois: [' + recentMonths.join(',') + ']</span>';
+    if (btn) btn.textContent = 'Enrichi ✓';
+
+  } catch(err) {
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">Erreur: ' + err.message + '</span>';
+    if (btn) { btn.textContent = 'Erreur'; btn.disabled = false; }
+  }
+}
+
+function updateMonthPicker(idx, months) {
+  const freqSel = document.getElementById('tr-freq-' + idx);
+  const picker  = document.getElementById('tr-mpicker-' + idx);
+  if (!picker || !freqSel) return;
+  freqSel.value = 'custom';
+  picker.style.display = 'flex';
+  picker.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.checked = months.includes(parseInt(cb.value));
+    const lbl = cb.parentElement;
+    if (cb.checked) { lbl.style.background = 'var(--green-bg)'; lbl.style.color = 'var(--green-text)'; }
+    else { lbl.style.background = 'var(--surface)'; lbl.style.color = 'var(--text2)'; }
+  });
+}
+
+
+function closeTrModal() {
+  document.getElementById('tr-modal').style.display = 'none';
+}
+
+load();
+render();
+</script>
+</body>
+</html>
