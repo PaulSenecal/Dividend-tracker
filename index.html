@@ -6,441 +6,336 @@
 <title>Dividend Tracker</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg: #f8f8f6;
-    --surface: #ffffff;
-    --surface2: #f1f0ea;
-    --border: rgba(0,0,0,0.10);
-    --border2: rgba(0,0,0,0.18);
-    --text: #1a1a18;
-    --text2: #5f5e5a;
-    --text3: #9b9a96;
-    --green: #1d9e75;
-    --green-bg: #e1f5ee;
-    --green-text: #085041;
-    --green-border: #5dcaa5;
-    --amber: #ba7517;
-    --amber-bg: #faeeda;
-    --amber-text: #633806;
-    --red: #a32d2d;
-    --red-bg: #fcebeb;
-    --blue: #185fa5;
-    --blue-bg: #e6f1fb;
-    --blue-text: #0c447c;
-    --radius: 10px;
-    --radius-sm: 6px;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #18181a;
-      --surface: #232325;
-      --surface2: #2c2c2e;
-      --border: rgba(255,255,255,0.10);
-      --border2: rgba(255,255,255,0.18);
-      --text: #f0efeb;
-      --text2: #b4b2a9;
-      --text3: #888780;
-      --green: #5dcaa5;
-      --green-bg: #085041;
-      --green-text: #9fe1cb;
-      --green-border: #1d9e75;
-      --amber: #ef9f27;
-      --amber-bg: #633806;
-      --amber-text: #fac775;
-      --red: #f09595;
-      --red-bg: #501313;
-      --blue: #85b7eb;
-      --blue-bg: #0c447c;
-      --blue-text: #b5d4f4;
-    }
-  }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    font-size: 15px;
-    line-height: 1.5;
-  }
-
-  .app { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
-
-  .top-bar {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 2rem; padding-bottom: 1rem;
-    border-bottom: 0.5px solid var(--border);
-  }
-  .top-bar h1 { font-size: 20px; font-weight: 500; display: flex; align-items: center; gap: 10px; }
-  .top-bar h1 span.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); display: inline-block; }
-  .date-badge {
-    font-size: 13px; color: var(--text2);
-    background: var(--surface2); border-radius: var(--radius-sm);
-    padding: 5px 12px; border: 0.5px solid var(--border);
-  }
-  .btn-group { display: flex; gap: 8px; }
-
-  .card {
-    background: var(--surface); border: 0.5px solid var(--border);
-    border-radius: var(--radius); padding: 1.25rem 1.5rem;
-    margin-bottom: 1.25rem;
-  }
-  .card-title {
-    font-size: 13px; font-weight: 500; color: var(--text2);
-    text-transform: uppercase; letter-spacing: 0.06em;
-    margin-bottom: 1rem; display: flex; align-items: center; gap: 6px;
-  }
-  .card-title svg { width: 15px; height: 15px; }
-
-  .form-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-  .form-grid-bot { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 12px; }
-  .field label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px; }
-  .field input, .field select {
-    width: 100%; font-size: 13px; padding: 8px 10px;
-    border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
-    background: var(--surface2); color: var(--text); outline: none;
-    transition: border-color .15s;
-  }
-  .field input:focus, .field select:focus { border-color: var(--green); }
-
-  .month-picker { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .month-picker label {
-    display: flex; align-items: center; gap: 4px;
-    font-size: 12px; padding: 4px 10px;
-    border: 0.5px solid var(--border2); border-radius: 20px;
-    cursor: pointer; user-select: none; transition: all .15s;
-    background: var(--surface2); color: var(--text2);
-  }
-  .month-picker label:has(input:checked) {
-    background: var(--green-bg); border-color: var(--green-border);
-    color: var(--green-text); font-weight: 500;
-  }
-  .month-picker input { display: none; }
-
-  .btn {
-    font-size: 13px; padding: 8px 16px; cursor: pointer;
-    border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
-    background: transparent; color: var(--text);
-    display: inline-flex; align-items: center; gap: 6px; transition: all .15s;
-  }
-  .btn:hover { background: var(--surface2); }
-  .btn-primary {
-    background: var(--green); border-color: var(--green);
-    color: #fff; font-weight: 500;
-  }
-  .btn-primary:hover { background: #0f6e56; }
-  .btn-sm { font-size: 12px; padding: 5px 10px; }
-  .btn-danger { color: var(--red); border-color: transparent; }
-  .btn-danger:hover { background: var(--red-bg); }
-  .btn-export { color: var(--blue); border-color: transparent; }
-  .btn-export:hover { background: var(--blue-bg); }
-
-  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
-  .metric {
-    background: var(--surface); border: 0.5px solid var(--border);
-    border-radius: var(--radius); padding: 1rem 1.25rem;
-  }
-  .metric-label { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
-  .metric-value { font-size: 22px; font-weight: 500; color: var(--text); }
-  .metric-value.green { color: var(--green); }
-  .metric-value.amber { color: var(--amber); }
-
-  .portfolio-header {
-    display: grid; grid-template-columns: 2.5fr 1fr 1fr 1fr 1fr 80px;
-    gap: 8px; font-size: 11px; color: var(--text3);
-    padding: 0 12px 8px; text-transform: uppercase; letter-spacing: 0.05em;
-  }
-  .asset-row {
-    display: grid; grid-template-columns: 2.5fr 1fr 1fr 1fr 1fr 80px;
-    gap: 8px; align-items: center; font-size: 13px;
-    padding: 10px 12px; border-radius: var(--radius-sm);
-    border: 0.5px solid var(--border);
-    background: var(--surface2); margin-bottom: 6px;
-    transition: border-color .15s;
-  }
-  .asset-row:hover { border-color: var(--border2); }
-  .asset-name { font-weight: 500; }
-  .asset-detail { color: var(--text2); }
-  .badge {
-    display: inline-block; font-size: 11px; padding: 3px 8px;
-    border-radius: 20px; font-weight: 500;
-  }
-  .badge-green { background: var(--green-bg); color: var(--green-text); }
-  .badge-blue { background: var(--blue-bg); color: var(--blue-text); }
-  .badge-amber { background: var(--amber-bg); color: var(--amber-text); }
-  .badge-purple { background: #eeedfe; color: #3c3489; }
-  @media (prefers-color-scheme: dark) { .badge-purple { background: #3c3489; color: #cecbf6; } }
-
-  .month-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 1.25rem; }
-  .month-cell {
-    background: var(--surface2); border-radius: var(--radius-sm);
-    padding: 0.9rem 1rem; border-left: 3px solid transparent;
-    border: 0.5px solid var(--border); position: relative;
-  }
-  .month-cell.has-div {
-    border-left: 3px solid var(--green);
-    background: var(--surface);
-  }
-  .month-cell.is-current {
-    border-top: 2px solid var(--amber);
-  }
-  .month-cell.is-past { opacity: 0.55; }
-  .month-name {
-    font-size: 11px; color: var(--text3); text-transform: uppercase;
-    letter-spacing: 0.07em; margin-bottom: 6px; display: flex; align-items: center; gap: 5px;
-  }
-  .month-tag {
-    font-size: 10px; padding: 1px 6px; border-radius: 20px; font-weight: 500;
-    background: var(--amber-bg); color: var(--amber-text);
-  }
-  .month-total { font-size: 18px; font-weight: 500; }
-  .month-total.positive { color: var(--text); }
-  .month-total.zero { color: var(--text3); }
-  .month-breakdown { font-size: 11px; color: var(--text2); margin-top: 5px; line-height: 1.6; }
-
-  .chart-wrap { position: relative; width: 100%; height: 200px; }
-
-  .empty-state {
-    text-align: center; padding: 2.5rem; color: var(--text2);
-    font-size: 14px; border: 1px dashed var(--border2);
-    border-radius: var(--radius); margin-top: 0.5rem;
-  }
-
-  .notification {
-    position: fixed; bottom: 1.5rem; right: 1.5rem;
-    background: var(--surface); border: 0.5px solid var(--border2);
-    border-radius: var(--radius-sm); padding: 10px 18px;
-    font-size: 13px; font-weight: 500; color: var(--green);
-    border-left: 3px solid var(--green);
-    opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 100;
-  }
-  .notification.show { opacity: 1; }
-
-  .section-hint { font-size: 12px; color: var(--text3); margin-top: 6px; }
-  hr { border: none; border-top: 0.5px solid var(--border); margin: 1.25rem 0; }
-
-  .asset-row.editing { border-color: var(--green); background: var(--green-bg); }
-  .edit-inline { display:grid; grid-template-columns: 2.5fr 1fr 1fr 1fr 1fr 80px; gap:8px; align-items:center; padding:10px 12px; border-radius:var(--radius-sm); border:1.5px solid var(--green); background:var(--green-bg); margin-bottom:6px; }
-  .edit-inline input, .edit-inline select { font-size:12px; padding:5px 8px; border:0.5px solid var(--green-border); border-radius:var(--radius-sm); background:var(--surface); color:var(--text); width:100%; }
-  .edit-inline input:focus, .edit-inline select:focus { outline:none; border-color:var(--green); }
-  .btn-save { color: var(--green-text); border-color: var(--green-border); background: var(--surface); }
-  .btn-save:hover { background: var(--green-bg); }
-
-  .next-month-banner {
-    background: var(--green-bg); border: 0.5px solid var(--green-border);
-    border-radius: var(--radius-sm); padding: 10px 14px;
-    font-size: 13px; color: var(--green-text);
-    display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem;
-  }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#f8f8f6; --surface:#fff; --surface2:#f1f0ea;
+  --border:rgba(0,0,0,.10); --border2:rgba(0,0,0,.18);
+  --text:#1a1a18; --text2:#5f5e5a; --text3:#9b9a96;
+  --green:#1d9e75; --green-bg:#e1f5ee; --green-text:#085041; --green-border:#5dcaa5;
+  --amber:#ba7517; --amber-bg:#faeeda; --amber-text:#633806;
+  --red:#a32d2d; --red-bg:#fcebeb;
+  --blue:#185fa5; --blue-bg:#e6f1fb; --blue-text:#0c447c;
+  --radius:10px; --radius-sm:6px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#18181a; --surface:#232325; --surface2:#2c2c2e;
+  --border:rgba(255,255,255,.10); --border2:rgba(255,255,255,.18);
+  --text:#f0efeb; --text2:#b4b2a9; --text3:#888780;
+  --green:#5dcaa5; --green-bg:#085041; --green-text:#9fe1cb; --green-border:#1d9e75;
+  --amber:#ef9f27; --amber-bg:#633806; --amber-text:#fac775;
+  --red:#f09595; --red-bg:#501313;
+  --blue:#85b7eb; --blue-bg:#0c447c; --blue-text:#b5d4f4;
+}}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;}
+.app{max-width:960px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;padding-bottom:1rem;border-bottom:.5px solid var(--border);}
+.top-bar h1{font-size:20px;font-weight:500;display:flex;align-items:center;gap:10px;}
+.top-bar h1 span.dot{width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block;}
+.date-badge{font-size:13px;color:var(--text2);background:var(--surface2);border-radius:var(--radius-sm);padding:5px 12px;border:.5px solid var(--border);}
+.card{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:1.25rem;}
+.card-title{font-size:13px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:1rem;display:flex;align-items:center;gap:6px;}
+.card-title svg{width:15px;height:15px;}
+.form-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px;}
+.form-grid-bot{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:12px;}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px;}
+.field input,.field select{width:100%;font-size:13px;padding:8px 10px;border:.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);outline:none;transition:border-color .15s;}
+.field input:focus,.field select:focus{border-color:var(--green);}
+.month-picker{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.month-picker label{display:flex;align-items:center;gap:4px;font-size:12px;padding:4px 10px;border:.5px solid var(--border2);border-radius:20px;cursor:pointer;user-select:none;transition:all .15s;background:var(--surface2);color:var(--text2);}
+.month-picker label:has(input:checked){background:var(--green-bg);border-color:var(--green-border);color:var(--green-text);font-weight:500;}
+.month-picker input{display:none;}
+.btn{font-size:13px;padding:8px 16px;cursor:pointer;border:.5px solid var(--border2);border-radius:var(--radius-sm);background:transparent;color:var(--text);display:inline-flex;align-items:center;gap:6px;transition:all .15s;}
+.btn:hover{background:var(--surface2);}
+.btn-primary{background:var(--green);border-color:var(--green);color:#fff;font-weight:500;}
+.btn-primary:hover{background:#0f6e56;}
+.btn-sm{font-size:12px;padding:5px 10px;}
+.btn-danger{color:var(--red);border-color:transparent;}
+.btn-danger:hover{background:var(--red-bg);}
+.btn-export{color:var(--blue);border-color:transparent;}
+.btn-export:hover{background:var(--blue-bg);}
+.btn-save{color:var(--green-text);border-color:var(--green-border);background:var(--surface);}
+.btn-save:hover{background:var(--green-bg);}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem;}
+.metric{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;}
+.metric-label{font-size:12px;color:var(--text2);margin-bottom:4px;}
+.metric-value{font-size:22px;font-weight:500;color:var(--text);}
+.metric-value.green{color:var(--green);}
+.metric-value.amber{color:var(--amber);}
+.metric-value.red{color:var(--red);}
+.portfolio-header{display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 1fr 80px;gap:8px;font-size:11px;color:var(--text3);padding:0 12px 8px;text-transform:uppercase;letter-spacing:.05em;}
+.asset-row{display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 1fr 80px;gap:8px;align-items:center;font-size:13px;padding:10px 12px;border-radius:var(--radius-sm);border:.5px solid var(--border);background:var(--surface2);margin-bottom:6px;transition:border-color .15s;}
+.asset-row:hover{border-color:var(--border2);}
+.asset-name{font-weight:500;}
+.asset-detail{color:var(--text2);}
+.badge{display:inline-block;font-size:11px;padding:3px 8px;border-radius:20px;font-weight:500;}
+.badge-green{background:var(--green-bg);color:var(--green-text);}
+.badge-blue{background:var(--blue-bg);color:var(--blue-text);}
+.badge-amber{background:var(--amber-bg);color:var(--amber-text);}
+.badge-purple{background:#eeedfe;color:#3c3489;}
+@media(prefers-color-scheme:dark){.badge-purple{background:#3c3489;color:#cecbf6;}}
+.month-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1.25rem;}
+.month-cell{background:var(--surface2);border-radius:var(--radius-sm);padding:.9rem 1rem;border:.5px solid var(--border);position:relative;cursor:pointer;transition:border-color .15s,transform .1s;}
+.month-cell:hover{border-color:var(--green);transform:translateY(-1px);}
+.month-cell.has-div{border-left:3px solid var(--green);background:var(--surface);}
+.month-cell.is-current{border-top:2px solid var(--amber);}
+.month-name{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+.month-tag{font-size:10px;padding:1px 6px;border-radius:20px;font-weight:500;background:var(--amber-bg);color:var(--amber-text);}
+.month-total{font-size:18px;font-weight:500;}
+.month-total.positive{color:var(--text);}
+.month-total.zero{color:var(--text3);}
+.month-net{font-size:11px;color:var(--text3);margin-top:2px;}
+.month-breakdown{font-size:11px;color:var(--text2);margin-top:5px;line-height:1.6;}
+.chart-wrap{position:relative;width:100%;height:200px;}
+.empty-state{text-align:center;padding:2.5rem;color:var(--text2);font-size:14px;border:1px dashed var(--border2);border-radius:var(--radius);margin-top:.5rem;}
+.notification{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--surface);border:.5px solid var(--border2);border-radius:var(--radius-sm);padding:10px 18px;font-size:13px;font-weight:500;color:var(--green);border-left:3px solid var(--green);opacity:0;transition:opacity .3s;pointer-events:none;z-index:300;}
+.notification.show{opacity:1;}
+.next-month-banner{background:var(--green-bg);border:.5px solid var(--green-border);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:var(--green-text);display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;}
+.risk-bar-wrap{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:4px;}
+.risk-bar{height:100%;border-radius:4px;transition:width .3s;}
+.sort-bar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center;}
+.sort-btn{font-size:12px;padding:4px 10px;border:.5px solid var(--border2);border-radius:20px;cursor:pointer;background:transparent;color:var(--text2);transition:all .15s;}
+.sort-btn:hover,.sort-btn.active{background:var(--surface);color:var(--text);border-color:var(--border2);font-weight:500;}
+.tabs{display:flex;gap:2px;margin-bottom:1rem;background:var(--surface2);border-radius:var(--radius-sm);padding:3px;}
+.tab{flex:1;text-align:center;font-size:13px;padding:6px;border-radius:calc(var(--radius-sm) - 2px);cursor:pointer;color:var(--text2);transition:all .15s;}
+.tab.active{background:var(--surface);color:var(--text);font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,.08);}
 </style>
 </head>
 <body>
 <div class="app">
 
-  <div class="top-bar">
-    <h1><span class="dot"></span> Dividend Tracker <span style="font-size:11px;font-weight:400;color:var(--text3);margin-left:6px;">v1.8</span></h1>
-    <div style="display:flex; align-items:center; gap:10px;">
-      <div class="date-badge" id="date-badge"></div>
-      <button class="btn btn-sm btn-export" onclick="exportJSON()" title="Exporter les données">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:15px;height:15px"><path d="M12 3v12m0 0-4-4m4 4 4-4M3 17v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/></svg>
-        Export JSON
-      </button>
-      <label class="btn btn-sm btn-export" style="cursor:pointer;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:15px;height:15px"><path d="M3 7v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7M12 21V9m0 0-4 4m4-4 4 4"/></svg>
-        Import JSON
-        <input type="file" accept=".json" onchange="importJSON(event)" style="display:none;">
-      </label>
-      <label class="btn btn-sm" style="cursor:pointer; color:#7f77dd; border-color:transparent;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:15px;height:15px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        Import Trade Republic
-        <input type="file" accept=".csv" onchange="importTR(event)" style="display:none;">
-      </label>
+<div class="top-bar">
+  <h1><span class="dot"></span> Dividend Tracker <span style="font-size:11px;font-weight:400;color:var(--text3);margin-left:6px;">v1.9</span></h1>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="date-badge" id="date-badge"></div>
+    <button class="btn btn-sm btn-export" onclick="exportJSON()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:15px;height:15px"><path d="M12 3v12m0 0-4-4m4 4 4-4M3 17v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/></svg>Export JSON
+    </button>
+    <label class="btn btn-sm btn-export" style="cursor:pointer;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:15px;height:15px"><path d="M3 7v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7M12 21V9m0 0-4 4m4-4 4 4"/></svg>Import JSON
+      <input type="file" accept=".json" onchange="importJSON(event)" style="display:none;">
+    </label>
+    <label class="btn btn-sm" style="cursor:pointer;color:#7f77dd;border-color:transparent;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:15px;height:15px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>Import TR
+      <input type="file" accept=".csv" onchange="importTR(event)" style="display:none;">
+    </label>
+    <button class="btn btn-sm" onclick="openSettings()" title="Paramètres">⚙</button>
+  </div>
+</div>
+
+<!-- Settings panel -->
+<div id="settings-panel" style="display:none;" class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+    <div class="card-title" style="margin:0;">⚙ Paramètres</div>
+    <button class="btn btn-sm" onclick="closeSettings()">Fermer</button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="field">
+      <label>Flat tax / PFU (%)</label>
+      <input type="number" id="s-tax" value="30" step="0.1" min="0" max="100" placeholder="30">
+      <div style="font-size:11px;color:var(--text3);margin-top:4px;">France : 30% PFU (12,8% IR + 17,2% PS). Prélèvement à la source TR : 12,8% + 15,5% PS = ~28,3% pour les non-résidents.</div>
+    </div>
+    <div class="field">
+      <label>Objectif de rente mensuelle (€)</label>
+      <input type="number" id="s-target" value="0" step="50" min="0" placeholder="ex: 500">
+      <div style="font-size:11px;color:var(--text3);margin-top:4px;">Calcule le temps nécessaire pour atteindre cet objectif net avec le DCA actuel.</div>
     </div>
   </div>
+  <div style="margin-top:12px;">
+    <button class="btn btn-primary btn-sm" onclick="saveSettings()">Enregistrer</button>
+  </div>
+</div>
 
-  <div id="tr-modal" style="display:none;">
-    <div style="background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:1.25rem;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-        <div class="card-title" style="margin:0;font-size:13px;">Actifs detectes depuis Trade Republic</div>
-        <button class="btn btn-sm" onclick="closeTrModal()" style="color:var(--text2);">Fermer</button>
-      </div>
-      <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:1rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:16px;height:16px;flex-shrink:0;color:#7f77dd"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
-        <span style="font-size:12px;color:var(--text2);flex:1;min-width:200px;">
-          APIs dividendes — <a href="https://finnhub.io/register" style="color:#7f77dd;">Finnhub</a> (US) · <a href="https://eodhd.com/register" style="color:#7f77dd;">EODHD</a> (EU/FR) · <a href="https://dash.cloudflare.com" style="color:#7f77dd;">Worker Cloudflare</a> requis (gratuit)
-        </span>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:11px;color:var(--text3);width:90px;">Finnhub (US)</span>
-            <input type="text" id="finnhub-key" placeholder="clé Finnhub" style="font-size:12px;padding:4px 8px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:200px;" oninput="saveFinnhubKey()">
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:11px;color:var(--text3);width:90px;">EODHD (EU/FR)</span>
-            <input type="text" id="eodhd-key" placeholder="clé EODHD" style="font-size:12px;padding:4px 8px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:200px;" oninput="saveEodhdKey()">
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:11px;color:var(--text3);width:90px;">Worker URL</span>
-            <input type="text" id="cf-worker-url" placeholder="https://dividend-proxy.xxx.workers.dev" style="font-size:12px;padding:4px 8px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:300px;" oninput="saveCfWorkerUrl()">
-          </div>
-        </div>
-        <div id="finnhub-status" style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:8px;"><span id="rate-badge" style="display:none;font-size:11px;padding:2px 8px;border-radius:20px;background:var(--surface2);border:0.5px solid var(--border2);">— req/min restantes</span></div>
-      </div>
-      <p style="font-size:13px;color:var(--text2);margin-bottom:1rem;">Capital pre-rempli depuis tes achats reels. Ajuste si besoin, puis clique Enrichir pour recuperer rendement + dates via Finnhub (optionnel), ou ajoute directement.</p>
-      <div id="tr-results"></div>
+<!-- TR modal -->
+<div id="tr-modal" style="display:none;">
+  <div style="background:var(--surface);border:.5px solid var(--border2);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:1.25rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <div class="card-title" style="margin:0;font-size:13px;">Actifs détectés depuis Trade Republic</div>
+      <button class="btn btn-sm" onclick="closeTrModal()">Fermer</button>
     </div>
+    <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:1rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:11px;color:var(--text3);width:90px;">Finnhub (US)</span>
+          <input type="text" id="finnhub-key" placeholder="clé Finnhub" style="font-size:12px;padding:4px 8px;border:.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:200px;" oninput="saveFinnhubKey()">
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:11px;color:var(--text3);width:90px;">EODHD (EU/FR)</span>
+          <input type="text" id="eodhd-key" placeholder="clé EODHD" style="font-size:12px;padding:4px 8px;border:.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:200px;" oninput="saveEodhdKey()">
+        </div>
+      </div>
+      <span id="rate-badge" style="display:none;font-size:11px;padding:2px 8px;border-radius:20px;background:var(--surface2);border:.5px solid var(--border2);">—</span>
+    </div>
+    <div id="tr-results"></div>
+  </div>
+</div>
+
+<!-- Add asset form -->
+<div class="card">
+  <div class="card-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>Ajouter un actif
+  </div>
+  <div class="form-grid">
+    <div class="field"><label>Nom (ETF / action)</label><input type="text" id="f-name" placeholder="ex: JEPI, CW8, MSFT…"></div>
+    <div class="field"><label>Capital initial (€)</label><input type="number" id="f-capital" placeholder="1 000" min="0" step="100"></div>
+    <div class="field"><label>DCA mensuel (€)</label><input type="number" id="f-dca" placeholder="100" min="0" step="50"></div>
+    <div class="field"><label>Rendement annuel (%)</label><input type="number" id="f-yield" placeholder="4.5" min="0" step="0.1"></div>
+  </div>
+  <div class="form-grid-bot">
+    <div class="field">
+      <label>Fréquence de versement</label>
+      <select id="f-freq" onchange="onFreqChange()">
+        <option value="monthly">Mensuel (jan → déc)</option>
+        <option value="quarterly">Trimestriel (mar, juin, sep, déc)</option>
+        <option value="quarterly2">Trimestriel (jan, avr, juil, oct)</option>
+        <option value="semi">Semestriel (juin, déc)</option>
+        <option value="annual">Annuel (déc)</option>
+        <option value="custom">Personnalisé…</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Catégorie</label>
+      <select id="f-color">
+        <option value="green">Vert (actions défensives)</option>
+        <option value="blue">Bleu (ETF)</option>
+        <option value="amber">Ambre (haut rendement)</option>
+        <option value="purple">Violet (obligations)</option>
+      </select>
+    </div>
+  </div>
+  <div id="custom-months" style="display:none;margin-bottom:12px;">
+    <div style="font-size:12px;color:var(--text2);margin-bottom:6px;">Mois de versement</div>
+    <div class="month-picker" id="month-checks">
+      <label><input type="checkbox" value="1">Jan</label><label><input type="checkbox" value="2">Fév</label>
+      <label><input type="checkbox" value="3">Mar</label><label><input type="checkbox" value="4">Avr</label>
+      <label><input type="checkbox" value="5">Mai</label><label><input type="checkbox" value="6">Juin</label>
+      <label><input type="checkbox" value="7">Juil</label><label><input type="checkbox" value="8">Août</label>
+      <label><input type="checkbox" value="9">Sep</label><label><input type="checkbox" value="10">Oct</label>
+      <label><input type="checkbox" value="11">Nov</label><label><input type="checkbox" value="12">Déc</label>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-primary" onclick="addAsset()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>Ajouter au portefeuille
+    </button>
+    <button class="btn" onclick="resetForm()">Effacer</button>
+  </div>
+</div>
+
+<!-- Portfolio -->
+<div id="portfolio-section" style="display:none;" class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+    <div class="card-title" style="margin:0;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:15px;height:15px"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Portefeuille
+    </div>
+    <div class="sort-bar" style="margin:0;">
+      <span style="font-size:11px;color:var(--text3);">Trier :</span>
+      <button class="sort-btn active" id="sort-name" onclick="setSort('name')">Nom</button>
+      <button class="sort-btn" id="sort-capital" onclick="setSort('capital')">Capital ↓</button>
+      <button class="sort-btn" id="sort-yld" onclick="setSort('yld')">Rendement ↓</button>
+      <button class="sort-btn" id="sort-div" onclick="setSort('div')">Dividende ↓</button>
+    </div>
+  </div>
+  <div class="portfolio-header">
+    <span>Actif</span><span>Capital</span><span>DCA/mois</span><span>Rendement</span><span>Fréquence</span><span style="text-align:right;">Actions</span>
+  </div>
+  <div id="assets-list"></div>
+</div>
+
+<!-- Results -->
+<div id="results-section" style="display:none;">
+  <div class="metrics" id="metrics-bar"></div>
+  <div id="next-banner"></div>
+  <div id="risk-section"></div>
+
+  <div class="card">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:15px;height:15px"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Calendrier — 12 mois dès <span id="start-month-label" style="color:var(--green);"></span>
+      <span style="font-size:11px;color:var(--text3);margin-left:6px;">(cliquer un mois pour le détail)</span>
+    </div>
+    <div class="month-grid" id="month-grid"></div>
   </div>
 
   <div class="card">
     <div class="card-title">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
-      Ajouter un actif
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:15px;height:15px"><path d="M3 3v18h18"/><path d="m7 16 4-4 4 4 4-4"/></svg>Projections
     </div>
-    <div class="form-grid">
-      <div class="field"><label>Nom (ETF / action)</label><input type="text" id="f-name" placeholder="ex: JEPI, CW8, MSFT…"></div>
-      <div class="field"><label>Capital initial (€)</label><input type="number" id="f-capital" placeholder="1 000" min="0" step="100"></div>
-      <div class="field"><label>DCA mensuel (€)</label><input type="number" id="f-dca" placeholder="100" min="0" step="50"></div>
-      <div class="field"><label>Rendement annuel (%)</label><input type="number" id="f-yield" placeholder="4.5" min="0" step="0.1"></div>
+    <div class="tabs">
+      <div class="tab active" onclick="setTab('monthly')">Mensuel (12m)</div>
+      <div class="tab" onclick="setTab('3y')">3 ans</div>
+      <div class="tab" onclick="setTab('5y')">5 ans</div>
+      <div class="tab" onclick="setTab('10y')">10 ans</div>
+      <div class="tab" onclick="setTab('pie')">Répartition</div>
     </div>
-    <div class="form-grid-bot">
-      <div class="field">
-        <label>Fréquence de versement</label>
-        <select id="f-freq" onchange="onFreqChange()">
-          <option value="monthly">Mensuel (jan → déc)</option>
-          <option value="quarterly">Trimestriel (mar, juin, sep, déc)</option>
-          <option value="quarterly2">Trimestriel (jan, avr, juil, oct)</option>
-          <option value="semi">Semestriel (juin, déc)</option>
-          <option value="annual">Annuel (déc)</option>
-          <option value="custom">Personnalisé…</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Couleur / catégorie</label>
-        <select id="f-color">
-          <option value="green">Vert (actions défensives)</option>
-          <option value="blue">Bleu (ETF)</option>
-          <option value="amber">Ambre (haut rendement)</option>
-          <option value="purple">Violet (obligations)</option>
-        </select>
-      </div>
-    </div>
-    <div id="custom-months" style="display:none; margin-bottom:12px;">
-      <div style="font-size:12px; color:var(--text2); margin-bottom:6px;">Mois de versement</div>
-      <div class="month-picker" id="month-checks">
-        <label><input type="checkbox" value="1">Jan</label>
-        <label><input type="checkbox" value="2">Fév</label>
-        <label><input type="checkbox" value="3">Mar</label>
-        <label><input type="checkbox" value="4">Avr</label>
-        <label><input type="checkbox" value="5">Mai</label>
-        <label><input type="checkbox" value="6">Juin</label>
-        <label><input type="checkbox" value="7">Juil</label>
-        <label><input type="checkbox" value="8">Août</label>
-        <label><input type="checkbox" value="9">Sep</label>
-        <label><input type="checkbox" value="10">Oct</label>
-        <label><input type="checkbox" value="11">Nov</label>
-        <label><input type="checkbox" value="12">Déc</label>
-      </div>
-    </div>
-    <div style="display:flex; gap:8px;">
-      <button class="btn btn-primary" onclick="addAsset()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>
-        Ajouter au portefeuille
-      </button>
-      <button class="btn" onclick="resetForm()">Effacer</button>
-    </div>
+    <div id="chart-legend" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;font-size:12px;color:var(--text2);"></div>
+    <div class="chart-wrap"><canvas id="divChart"></canvas></div>
+    <div id="projection-summary" style="margin-top:12px;font-size:13px;color:var(--text2);"></div>
   </div>
-
-  <div id="portfolio-section" style="display:none;" class="card">
-    <div class="card-title">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:15px;height:15px"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-      Portefeuille
-    </div>
-    <div class="portfolio-header">
-      <span>Actif</span><span>Capital</span><span>DCA/mois</span><span>Rendement</span><span>Fréquence</span><span style="text-align:right;">Actions</span>
-    </div>
-    <div id="assets-list"></div>
-  </div>
-
-  <div id="results-section" style="display:none;">
-    <div class="metrics" id="metrics-bar"></div>
-    <div id="next-banner"></div>
-    <div class="card">
-      <div class="card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:15px;height:15px"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-        Calendrier des dividendes — 12 mois dès <span id="start-month-label" style="color:var(--green); font-style:normal;"></span>
-      </div>
-      <div class="month-grid" id="month-grid"></div>
-    </div>
-    <div class="card">
-      <div class="card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:15px;height:15px"><path d="M3 3v18h18"/><path d="m7 16 4-4 4 4 4-4"/></svg>
-        Projection mensuelle (€)
-      </div>
-      <div id="chart-legend" style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:10px; font-size:12px; color:var(--text2);"></div>
-      <div class="chart-wrap"><canvas id="divChart" role="img" aria-label="Graphique des dividendes mensuels projetés"></canvas></div>
-    </div>
-  </div>
-
-  <div id="empty-state" class="empty-state">
-    Ajoute ton premier ETF ou action pour démarrer la projection.
-  </div>
-
-  <!-- Month detail panel -->
-  <div id="month-panel" style="display:none;position:fixed;top:0;right:0;width:360px;height:100vh;background:var(--surface);border-left:0.5px solid var(--border2);z-index:200;overflow-y:auto;box-shadow:-4px 0 20px rgba(0,0,0,0.12);">
-    <div style="padding:1.25rem 1.5rem;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-      <div>
-        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;">Valorisation théorique</div>
-        <div id="panel-month-title" style="font-size:17px;font-weight:500;"></div>
-      </div>
-      <button class="btn btn-sm" onclick="closeMonthPanel()" style="color:var(--text2);">✕</button>
-    </div>
-    <div style="padding:1rem 1.5rem;">
-      <div id="panel-total" style="background:var(--green-bg);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:1rem;">
-        <div style="font-size:11px;color:var(--green-text);margin-bottom:2px;">Total portefeuille</div>
-        <div id="panel-total-val" style="font-size:22px;font-weight:500;color:var(--green);"></div>
-        <div id="panel-div-val" style="font-size:12px;color:var(--green-text);margin-top:2px;"></div>
-      </div>
-      <div id="panel-positions"></div>
-    </div>
-  </div>
-  <div id="month-panel-overlay" onclick="closeMonthPanel()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.2);z-index:199;"></div>
 </div>
 
+<div id="empty-state" class="empty-state">Ajoute ton premier ETF ou action pour démarrer la projection.</div>
+
+<!-- Month detail panel -->
+<div id="month-panel" style="display:none;position:fixed;top:0;right:0;width:360px;height:100vh;background:var(--surface);border-left:.5px solid var(--border2);z-index:200;overflow-y:auto;box-shadow:-4px 0 20px rgba(0,0,0,.12);">
+  <div style="padding:1.25rem 1.5rem;border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;">Valorisation théorique</div>
+      <div id="panel-month-title" style="font-size:17px;font-weight:500;"></div>
+    </div>
+    <button class="btn btn-sm" onclick="closeMonthPanel()">✕</button>
+  </div>
+  <div style="padding:1rem 1.5rem;">
+    <div style="background:var(--green-bg);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:1rem;">
+      <div style="font-size:11px;color:var(--green-text);margin-bottom:2px;">Total portefeuille</div>
+      <div id="panel-total-val" style="font-size:22px;font-weight:500;color:var(--green);"></div>
+      <div id="panel-div-val" style="font-size:12px;color:var(--green-text);margin-top:2px;"></div>
+      <div id="panel-net-val" style="font-size:12px;color:var(--green-text);margin-top:1px;"></div>
+    </div>
+    <div id="panel-positions"></div>
+  </div>
+</div>
+<div id="month-panel-overlay" onclick="closeMonthPanel()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.2);z-index:199;"></div>
+
+</div><!-- .app -->
 <div class="notification" id="notif"></div>
 
 <script>
 const STORAGE_KEY = 'dividend_tracker_v2';
 const FREQ_MONTHS = {
-  monthly: [1,2,3,4,5,6,7,8,9,10,11,12],
-  quarterly: [3,6,9,12],
-  quarterly2: [1,4,7,10],
-  semi: [6,12],
-  annual: [12]
+  monthly:[1,2,3,4,5,6,7,8,9,10,11,12],
+  quarterly:[3,6,9,12], quarterly2:[1,4,7,10],
+  semi:[6,12], annual:[12]
 };
 const FREQ_LABELS = {
-  monthly: 'Mensuel', quarterly: 'Trim. (mar…)', quarterly2: 'Trim. (jan…)',
-  semi: 'Semestriel', annual: 'Annuel', custom: 'Personnalisé'
+  monthly:'Mensuel', quarterly:'Trim. (mar…)', quarterly2:'Trim. (jan…)',
+  semi:'Semestriel', annual:'Annuel', custom:'Personnalisé'
 };
 const MONTH_NAMES = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
 const MONTH_NAMES_LONG = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const COLOR_MAP = {
-  green: { badge: 'badge-green', bar: '#1d9e75', barLight: '#1d9e7533' },
-  blue:  { badge: 'badge-blue',  bar: '#378add', barLight: '#378add33' },
-  amber:  { badge: 'badge-amber',  bar: '#ba7517', barLight: '#ba751733' },
-  purple: { badge: 'badge-purple', bar: '#7f77dd', barLight: '#7f77dd33' }
+  green:{badge:'badge-green',bar:'#1d9e75',barLight:'#1d9e7533'},
+  blue:{badge:'badge-blue',bar:'#378add',barLight:'#378add33'},
+  amber:{badge:'badge-amber',bar:'#ba7517',barLight:'#ba751733'},
+  purple:{badge:'badge-purple',bar:'#7f77dd',barLight:'#7f77dd33'}
 };
 
 let assets = [];
+let settings = { tax: 30, target: 0 };
 let chart = null;
+let currentTab = 'monthly';
+let currentSort = 'name';
 
 function save() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(assets)); } catch(e) {}
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ assets, settings })); } catch(e) {}
 }
 function load() {
   try {
     const d = localStorage.getItem(STORAGE_KEY);
-    if (d) assets = JSON.parse(d);
+    if (d) {
+      const p = JSON.parse(d);
+      assets = p.assets || p || [];
+      if (p.settings) settings = { ...settings, ...p.settings };
+    }
   } catch(e) { assets = []; }
 }
 
@@ -451,15 +346,55 @@ function notify(msg) {
   setTimeout(() => el.classList.remove('show'), 2200);
 }
 
-function onFreqChange() {
-  const v = document.getElementById('f-freq').value;
-  document.getElementById('custom-months').style.display = v === 'custom' ? 'block' : 'none';
+// ── SETTINGS ─────────────────────────────────────────────────────────────
+function openSettings() {
+  const p = document.getElementById('settings-panel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+  document.getElementById('s-tax').value = settings.tax;
+  document.getElementById('s-target').value = settings.target;
+}
+function closeSettings() { document.getElementById('settings-panel').style.display = 'none'; }
+function saveSettings() {
+  settings.tax = parseFloat(document.getElementById('s-tax').value) || 30;
+  settings.target = parseFloat(document.getElementById('s-target').value) || 0;
+  save(); render(); closeSettings();
+  notify('Paramètres enregistrés');
+}
+function netDiv(gross) { return gross * (1 - settings.tax / 100); }
+
+// ── SORT ──────────────────────────────────────────────────────────────────
+function setSort(key) {
+  currentSort = key;
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sort-' + key).classList.add('active');
+  renderPortfolio();
+}
+function getSortedAssets() {
+  const a = [...assets];
+  if (currentSort === 'name') return a.sort((x,y) => x.name.localeCompare(y.name));
+  if (currentSort === 'capital') return a.sort((x,y) => y.capital - x.capital);
+  if (currentSort === 'yld') return a.sort((x,y) => y.yld - x.yld);
+  if (currentSort === 'div') return a.sort((x,y) => (y.capital*y.yld/100) - (x.capital*x.yld/100));
+  return a;
 }
 
+// ── TABS ──────────────────────────────────────────────────────────────────
+function setTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  const now = new Date();
+  computeAndRenderResults(now.getMonth()+1, now.getFullYear());
+}
+
+// ── FORM ──────────────────────────────────────────────────────────────────
+function onFreqChange() {
+  document.getElementById('custom-months').style.display =
+    document.getElementById('f-freq').value === 'custom' ? 'block' : 'none';
+}
 function getCustomMonths() {
   return Array.from(document.querySelectorAll('#month-checks input:checked')).map(cb => parseInt(cb.value));
 }
-
 function addAsset() {
   const name = document.getElementById('f-name').value.trim();
   const capital = parseFloat(document.getElementById('f-capital').value) || 0;
@@ -467,27 +402,18 @@ function addAsset() {
   const yld = parseFloat(document.getElementById('f-yield').value) || 0;
   const freq = document.getElementById('f-freq').value;
   const color = document.getElementById('f-color').value;
-
-  if (!name) { alert('Renseigne un nom pour l\'actif.'); return; }
+  if (!name) { alert('Renseigne un nom.'); return; }
   if (yld === 0) { alert('Le rendement ne peut pas être 0%.'); return; }
-
   let months = freq === 'custom' ? getCustomMonths() : FREQ_MONTHS[freq];
-  if (!months || months.length === 0) { alert('Sélectionne au moins un mois de versement.'); return; }
-
+  if (!months || months.length === 0) { alert('Sélectionne au moins un mois.'); return; }
   assets.push({ id: Date.now(), name, capital, dca, yld, freq, months, color: color || 'green' });
-  save();
-  render();
-  resetForm();
-  notify('✓ ' + name + ' ajouté au portefeuille');
+  save(); render(); resetForm();
+  notify('✓ ' + name + ' ajouté');
 }
-
 function removeAsset(id) {
   assets = assets.filter(a => a.id !== id);
-  save();
-  render();
-  notify('Actif supprimé');
+  save(); render(); notify('Actif supprimé');
 }
-
 function resetForm() {
   ['f-name','f-capital','f-dca','f-yield'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-freq').value = 'monthly';
@@ -496,60 +422,57 @@ function resetForm() {
   document.querySelectorAll('#month-checks input').forEach(cb => cb.checked = false);
 }
 
+// ── EXPORT / IMPORT ───────────────────────────────────────────────────────
 function exportJSON() {
-  const blob = new Blob([JSON.stringify({ assets, exportedAt: new Date().toISOString() }, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify({ assets, settings, exportedAt: new Date().toISOString() }, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url;
   a.download = 'dividend_tracker_' + new Date().toISOString().slice(0,10) + '.json';
   a.click(); URL.revokeObjectURL(url);
   notify('Export JSON téléchargé');
 }
-
 function importJSON(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+  const file = e.target.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = ev => {
     try {
       const data = JSON.parse(ev.target.result);
       if (data.assets && Array.isArray(data.assets)) {
         assets = data.assets;
+        if (data.settings) settings = { ...settings, ...data.settings };
         save(); render();
         notify('✓ ' + assets.length + ' actifs importés');
       } else { alert('Fichier JSON invalide.'); }
-    } catch { alert('Erreur de lecture du fichier.'); }
+    } catch { alert('Erreur de lecture.'); }
   };
-  reader.readAsText(file);
-  e.target.value = '';
+  reader.readAsText(file); e.target.value = '';
 }
 
 function fmtMoney(v, decimals=2) {
   return v.toLocaleString('fr-FR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + ' €';
 }
 
+// ── RENDER ────────────────────────────────────────────────────────────────
 function render() {
   const now = new Date();
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
-
-  document.getElementById('date-badge').textContent =
-    MONTH_NAMES_LONG[currentMonth-1] + ' ' + currentYear;
-
+  document.getElementById('date-badge').textContent = MONTH_NAMES_LONG[currentMonth-1] + ' ' + currentYear;
   const hasAssets = assets.length > 0;
   document.getElementById('empty-state').style.display = hasAssets ? 'none' : 'block';
   document.getElementById('portfolio-section').style.display = hasAssets ? 'block' : 'none';
   document.getElementById('results-section').style.display = hasAssets ? 'block' : 'none';
-
   if (!hasAssets) { if (chart) { chart.destroy(); chart = null; } return; }
-
   renderPortfolio();
   computeAndRenderResults(currentMonth, currentYear);
 }
 
 function renderPortfolio() {
   const el = document.getElementById('assets-list');
-  el.innerHTML = assets.map(a => {
+  const sorted = getSortedAssets();
+  el.innerHTML = sorted.map(a => {
     const cm = COLOR_MAP[a.color] || COLOR_MAP.green;
+    const annualDiv = (a.capital * a.yld / 100);
     return `
     <div class="asset-row" id="row-${a.id}">
       <span class="asset-name">${a.name}</span>
@@ -557,11 +480,11 @@ function renderPortfolio() {
       <span class="asset-detail">${fmtMoney(a.dca, 0)}</span>
       <span><span class="badge ${cm.badge}">${a.yld.toFixed(1)}%</span></span>
       <span class="asset-detail" style="font-size:12px;">${FREQ_LABELS[a.freq]}</span>
-      <span style="text-align:right; display:flex; gap:4px; justify-content:flex-end;">
-        <button class="btn btn-sm" onclick="editAsset(${a.id})" title="Modifier" style="color:var(--blue);">
+      <span style="text-align:right;display:flex;gap:4px;justify-content:flex-end;">
+        <button class="btn btn-sm" onclick="editAsset(${a.id})" style="color:var(--blue);">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:14px;height:14px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </button>
-        <button class="btn btn-sm btn-danger" onclick="removeAsset(${a.id})" title="Supprimer">
+        <button class="btn btn-sm btn-danger" onclick="removeAsset(${a.id})">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:14px;height:14px"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
         </button>
       </span>
@@ -570,803 +493,572 @@ function renderPortfolio() {
 }
 
 function editAsset(id) {
-  const a = assets.find(x => x.id === id);
-  if (!a) return;
+  const a = assets.find(x => x.id === id); if (!a) return;
   const el = document.getElementById('row-' + id);
   const freqOpts = Object.entries(FREQ_LABELS).map(([k,v]) =>
     `<option value="${k}" ${a.freq===k?'selected':''}>${v}</option>`).join('');
   const MN = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
   const monthChecks = MN.map((m,i) => {
     const checked = (a.months||[]).includes(i+1) ? 'checked' : '';
-    return `<label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 8px;border:0.5px solid var(--green-border);border-radius:20px;cursor:pointer;background:${checked?'var(--green-bg)':'var(--surface)'};color:${checked?'var(--green-text)':'var(--text2)'};" id="elbl-${id}-${i+1}">
-      <input type="checkbox" value="${i+1}" ${checked} style="display:none;" onchange="toggleEditMonth(${id},${i+1},this)">${m}
-    </label>`;
+    return `<label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 8px;border:.5px solid var(--green-border);border-radius:20px;cursor:pointer;background:${checked?'var(--green-bg)':'var(--surface)'};color:${checked?'var(--green-text)':'var(--text2)'};" id="elbl-${id}-${i+1}">
+      <input type="checkbox" value="${i+1}" ${checked} style="display:none;" onchange="toggleEditMonth(${id},${i+1},this)">${m}</label>`;
   }).join('');
-  const showCustom = a.freq === 'custom';
   el.outerHTML = `
   <div style="border:1.5px solid var(--green);border-radius:var(--radius-sm);background:var(--green-bg);margin-bottom:6px;padding:10px 12px;" id="row-${id}">
-    <div style="display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 1fr 1fr 80px;gap:8px;align-items:center;margin-bottom:8px;">
-      <input id="e-name-${id}" value="${a.name}" placeholder="Nom" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
-      <input id="e-capital-${id}" type="number" value="${a.capital}" placeholder="Capital €" step="50" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
-      <input id="e-dca-${id}" type="number" value="${a.dca}" placeholder="DCA €" step="50" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
-      <input id="e-yield-${id}" type="number" value="${a.yld}" placeholder="Rdt %" step="0.1" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
-      <select id="e-freq-${id}" onchange="onEditFreqChange(${id})" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">${freqOpts}</select>
-      <select id="e-color-${id}" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr 80px;gap:8px;align-items:center;margin-bottom:8px;">
+      <input id="e-name-${id}" value="${a.name}" style="font-size:12px;padding:5px 8px;border:.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
+      <input id="e-capital-${id}" type="number" value="${a.capital}" step="50" style="font-size:12px;padding:5px 8px;border:.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
+      <input id="e-dca-${id}" type="number" value="${a.dca}" step="50" style="font-size:12px;padding:5px 8px;border:.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
+      <input id="e-yield-${id}" type="number" value="${a.yld}" step="0.1" style="font-size:12px;padding:5px 8px;border:.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
+      <select id="e-freq-${id}" onchange="onEditFreqChange(${id})" style="font-size:12px;padding:5px 8px;border:.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">${freqOpts}</select>
+      <select id="e-color-${id}" style="font-size:12px;padding:5px 8px;border:.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
         <option value="green" ${a.color==='green'?'selected':''}>Vert</option>
         <option value="blue" ${a.color==='blue'?'selected':''}>Bleu</option>
         <option value="amber" ${a.color==='amber'?'selected':''}>Ambre</option>
         <option value="purple" ${a.color==='purple'?'selected':''}>Violet</option>
       </select>
       <span style="display:flex;gap:4px;justify-content:flex-end;">
-        <button class="btn btn-sm btn-save" onclick="saveAsset(${id})" title="Enregistrer">
+        <button class="btn btn-sm btn-save" onclick="saveAsset(${id})">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="m5 13 4 4L19 7"/></svg>
         </button>
-        <button class="btn btn-sm" onclick="renderPortfolio()" title="Annuler" style="color:var(--text2);">
+        <button class="btn btn-sm" onclick="renderPortfolio()" style="color:var(--text2);">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </span>
     </div>
-    <div id="e-custompicker-${id}" style="display:${showCustom?'flex':'none'};flex-wrap:wrap;gap:5px;padding-top:6px;border-top:0.5px solid var(--green-border);">
+    <div id="e-custompicker-${id}" style="display:${a.freq==='custom'?'flex':'none'};flex-wrap:wrap;gap:5px;padding-top:6px;border-top:.5px solid var(--green-border);">
       ${monthChecks}
     </div>
   </div>`;
   document.getElementById('e-name-' + id).focus();
 }
-
 function onEditFreqChange(id) {
-  const freq = document.getElementById('e-freq-' + id).value;
-  document.getElementById('e-custompicker-' + id).style.display = freq === 'custom' ? 'flex' : 'none';
+  document.getElementById('e-custompicker-'+id).style.display =
+    document.getElementById('e-freq-'+id).value === 'custom' ? 'flex' : 'none';
 }
-
 function toggleEditMonth(id, month, cb) {
-  const lbl = document.getElementById('elbl-' + id + '-' + month);
-  if (cb.checked) {
-    lbl.style.background = 'var(--green-bg)';
-    lbl.style.color = 'var(--green-text)';
-  } else {
-    lbl.style.background = 'var(--surface)';
-    lbl.style.color = 'var(--text2)';
-  }
+  const lbl = document.getElementById('elbl-'+id+'-'+month);
+  if (cb.checked) { lbl.style.background='var(--green-bg)'; lbl.style.color='var(--green-text)'; }
+  else { lbl.style.background='var(--surface)'; lbl.style.color='var(--text2)'; }
 }
-
 function saveAsset(id) {
-  const a = assets.find(x => x.id === id);
-  if (!a) return;
-  const name = document.getElementById('e-name-' + id).value.trim();
-  const capital = parseFloat(document.getElementById('e-capital-' + id).value) || 0;
-  const dca = parseFloat(document.getElementById('e-dca-' + id).value) || 0;
-  const yld = parseFloat(document.getElementById('e-yield-' + id).value) || 0;
-  const freq = document.getElementById('e-freq-' + id).value;
+  const a = assets.find(x => x.id === id); if (!a) return;
+  const name = document.getElementById('e-name-'+id).value.trim();
+  const capital = parseFloat(document.getElementById('e-capital-'+id).value) || 0;
+  const dca = parseFloat(document.getElementById('e-dca-'+id).value) || 0;
+  const yld = parseFloat(document.getElementById('e-yield-'+id).value) || 0;
+  const freq = document.getElementById('e-freq-'+id).value;
+  const color = document.getElementById('e-color-'+id).value || a.color;
   if (!name || yld === 0) { alert('Nom et rendement requis.'); return; }
-  let months;
-  if (freq === 'custom') {
-    months = Array.from(document.querySelectorAll(`#e-custompicker-${id} input:checked`)).map(cb => parseInt(cb.value));
-    if (months.length === 0) { alert('Sélectionne au moins un mois.'); return; }
-  } else {
-    months = FREQ_MONTHS[freq];
-  }
-  const color = (document.getElementById('e-color-'+id)||{}).value || a.color || 'green';
+  let months = freq === 'custom'
+    ? Array.from(document.querySelectorAll('#e-custompicker-'+id+' input:checked')).map(cb=>parseInt(cb.value))
+    : FREQ_MONTHS[freq];
+  if (!months || months.length === 0) { alert('Sélectionne au moins un mois.'); return; }
   Object.assign(a, { name, capital, dca, yld, freq, months, color });
-  save();
-  render();
-  notify('✓ ' + name + ' mis à jour');
+  save(); render(); notify('✓ ' + name + ' mis à jour');
 }
 
+// ── COMPUTE RESULTS ───────────────────────────────────────────────────────
 function computeAndRenderResults(startMonth, startYear) {
   const monthlyTotals = new Array(12).fill(0);
   const monthlyBreakdowns = Array.from({length:12}, () => []);
-
   assets.forEach(a => {
-    let runningCapital = a.capital;
+    let cap = a.capital;
     for (let i = 0; i < 12; i++) {
-      runningCapital += a.dca;
+      cap += a.dca;
       const mNum = ((startMonth - 1 + i) % 12) + 1;
       if (a.months.includes(mNum)) {
-        const numPayouts = a.months.length;
-        const divAmount = (runningCapital * (a.yld / 100)) / numPayouts;
-        monthlyTotals[i] += divAmount;
-        monthlyBreakdowns[i].push({ name: a.name, amount: divAmount, color: a.color });
+        const div = (cap * a.yld / 100) / a.months.length;
+        monthlyTotals[i] += div;
+        monthlyBreakdowns[i].push({ name: a.name, amount: div, color: a.color });
       }
     }
   });
 
   const totalAnnual = monthlyTotals.reduce((s,v) => s+v, 0);
+  const totalAnnualNet = netDiv(totalAnnual);
   const totalCapital = assets.reduce((s,a) => s+a.capital, 0);
   const totalDCA = assets.reduce((s,a) => s+a.dca, 0);
   const avgMonthly = totalAnnual / 12;
-  const nextPayIdx = monthlyTotals.findIndex(v => v > 0);
 
   document.getElementById('start-month-label').textContent = MONTH_NAMES_LONG[startMonth-1] + ' ' + startYear;
 
+  // Metrics
+  const targetEl = settings.target > 0
+    ? `<div class="metric"><div class="metric-label">Objectif rente net</div><div class="metric-value ${totalAnnualNet/12 >= settings.target ? 'green' : 'amber'}">${Math.round(totalAnnualNet/12*100/settings.target)}%</div></div>`
+    : `<div class="metric"><div class="metric-label">Net après taxe (${settings.tax}%)</div><div class="metric-value">${fmtMoney(totalAnnualNet/12)}/m</div></div>`;
   document.getElementById('metrics-bar').innerHTML = `
     <div class="metric"><div class="metric-label">Capital investi</div><div class="metric-value">${fmtMoney(totalCapital, 0)}</div></div>
-    <div class="metric"><div class="metric-label">DCA mensuel total</div><div class="metric-value amber">${fmtMoney(totalDCA, 0)}</div></div>
-    <div class="metric"><div class="metric-label">Dividendes / an (proj.)</div><div class="metric-value green">${fmtMoney(totalAnnual)}</div></div>
-    <div class="metric"><div class="metric-label">Moyenne mensuelle</div><div class="metric-value">${fmtMoney(avgMonthly)}</div></div>
-  `;
+    <div class="metric"><div class="metric-label">DCA mensuel</div><div class="metric-value amber">${fmtMoney(totalDCA, 0)}</div></div>
+    <div class="metric"><div class="metric-label">Dividendes bruts / an</div><div class="metric-value green">${fmtMoney(totalAnnual)}</div></div>
+    ${targetEl}`;
 
+  // Next banner
+  const nextPayIdx = monthlyTotals.findIndex(v => v > 0);
   const nextBanner = document.getElementById('next-banner');
   if (nextPayIdx >= 0 && nextPayIdx <= 2) {
     const nextMon = ((startMonth - 1 + nextPayIdx) % 12);
     nextBanner.innerHTML = `<div class="next-month-banner">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:16px;height:16px;flex-shrink:0"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg>
-      Prochain versement : <strong>${MONTH_NAMES_LONG[nextMon]}</strong> — ${fmtMoney(monthlyTotals[nextPayIdx])}
+      Prochain versement : <strong>${MONTH_NAMES_LONG[nextMon]}</strong> — brut ${fmtMoney(monthlyTotals[nextPayIdx])} · net ${fmtMoney(netDiv(monthlyTotals[nextPayIdx]))}
     </div>`;
   } else { nextBanner.innerHTML = ''; }
 
-  const grid = document.getElementById('month-grid');
-  grid.innerHTML = monthlyTotals.map((total, i) => {
+  // Concentration risk
+  renderRisk(totalAnnual);
+
+  // Month grid
+  document.getElementById('month-grid').innerHTML = monthlyTotals.map((total, i) => {
     const mIdx = (startMonth - 1 + i) % 12;
     const mYear = startYear + Math.floor((startMonth - 1 + i) / 12);
-    const isCurrent = i === 0;
-    const isPast = false;
     const hasdiv = total > 0;
-    const breakdown = monthlyBreakdowns[i]
-      .map(b => `<span style="color:${COLOR_MAP[b.color]?.bar || '#1d9e75'}">${b.name}</span> ${fmtMoney(b.amount)}`)
-      .join('<br>');
-    return `
-      <div class="month-cell ${hasdiv ? 'has-div' : ''} ${isCurrent ? 'is-current' : ''}" onclick="openMonthPanel(${i})" style="cursor:pointer;" title="Voir la valorisation">
-        <div class="month-name">
-          ${MONTH_NAMES[mIdx]} ${mYear !== startYear ? '<span style="font-size:10px;color:var(--text3)">'+mYear+'</span>' : ''}
-          ${isCurrent ? '<span class="month-tag">Maintenant</span>' : ''}
-        </div>
-        <div class="month-total ${hasdiv ? 'positive' : 'zero'}">${hasdiv ? fmtMoney(total) : '—'}</div>
-        ${breakdown ? `<div class="month-breakdown">${breakdown}</div>` : ''}
-      </div>`;
+    const breakdown = monthlyBreakdowns[i].map(b =>
+      `<span style="color:${COLOR_MAP[b.color]?.bar||'#1d9e75'}">${b.name}</span> ${fmtMoney(b.amount)}`
+    ).join('<br>');
+    return `<div class="month-cell ${hasdiv?'has-div':''} ${i===0?'is-current':''}" onclick="openMonthPanel(${i})">
+      <div class="month-name">${MONTH_NAMES[mIdx]}${mYear!==startYear?' <span style="font-size:10px;color:var(--text3)">'+mYear+'</span>':''} ${i===0?'<span class="month-tag">Maintenant</span>':''}</div>
+      <div class="month-total ${hasdiv?'positive':'zero'}">${hasdiv?fmtMoney(total):'—'}</div>
+      ${hasdiv?`<div class="month-net">net ${fmtMoney(netDiv(total))}</div>`:''}
+      ${breakdown?`<div class="month-breakdown">${breakdown}</div>`:''}
+    </div>`;
   }).join('');
 
-  renderChart(startMonth, startYear, monthlyTotals, monthlyBreakdowns);
+  renderChart(startMonth, startYear, monthlyTotals);
 }
 
-function renderChart(startMonth, startYear, totals, breakdowns) {
-  const labels = Array.from({length:12}, (_,i) => {
-    const mIdx = (startMonth - 1 + i) % 12;
-    const yr = startYear + Math.floor((startMonth - 1 + i) / 12);
-    return MONTH_NAMES[mIdx] + (yr !== startYear ? ' '+String(yr).slice(2) : '');
-  });
+// ── RISK ──────────────────────────────────────────────────────────────────
+function renderRisk(totalAnnual) {
+  if (totalAnnual === 0) { document.getElementById('risk-section').innerHTML = ''; return; }
+  const risks = assets.map(a => {
+    const div = a.capital * a.yld / 100;
+    const pct = (div / totalAnnual * 100);
+    const color = pct > 40 ? 'var(--red)' : pct > 25 ? 'var(--amber)' : 'var(--green)';
+    return { name: a.name, pct, color, bar: COLOR_MAP[a.color]?.bar || '#1d9e75' };
+  }).sort((a,b) => b.pct - a.pct);
 
-  const bgColors = totals.map((v,i) => {
-    if (i === 0) return '#ba7517aa';
-    return v > 0 ? '#1d9e75aa' : '#88878033';
-  });
-  const borderColors = totals.map((v,i) => {
-    if (i === 0) return '#ba7517';
-    return v > 0 ? '#0f6e56' : '#b4b2a9';
-  });
+  const hasRisk = risks.some(r => r.pct > 25);
+  document.getElementById('risk-section').innerHTML = `
+  <div class="card" style="${hasRisk?'border-color:var(--amber)':''}">
+    <div class="card-title" style="${hasRisk?'color:var(--amber)':''}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:15px;height:15px"><path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+      Concentration des dividendes ${hasRisk?'— ⚠ Risque de concentration':''}
+    </div>
+    <div style="display:grid;gap:8px;">
+      ${risks.map(r => `
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
+            <span style="color:var(--text2);">${r.name}</span>
+            <span style="font-weight:500;color:${r.color}">${r.pct.toFixed(1)}%</span>
+          </div>
+          <div class="risk-bar-wrap"><div class="risk-bar" style="width:${r.pct}%;background:${r.color};"></div></div>
+        </div>`).join('')}
+    </div>
+    ${hasRisk?'<div style="font-size:12px;color:var(--amber-text);margin-top:10px;padding:8px;background:var(--amber-bg);border-radius:var(--radius-sm);">Un actif représente plus de 25% de tes dividendes. Envisage de diversifier.</div>':''}
+  </div>`;
+}
 
+// ── CHART ─────────────────────────────────────────────────────────────────
+function renderChart(startMonth, startYear, monthlyTotals) {
+  if (chart) { chart.destroy(); chart = null; }
   const legend = document.getElementById('chart-legend');
-  legend.innerHTML = `
-    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#1d9e75"></span>Dividende versé</span>
-    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#ba7517"></span>Mois en cours</span>
-    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#88878033;border:0.5px solid #b4b2a9"></span>Aucun versement</span>
-  `;
+  const summary = document.getElementById('projection-summary');
 
-  if (chart) chart.destroy();
+  if (currentTab === 'pie') {
+    // Pie chart by asset
+    const data = assets.map(a => parseFloat((a.capital * a.yld / 100).toFixed(2)));
+    const labels = assets.map(a => a.name);
+    const colors = assets.map(a => COLOR_MAP[a.color]?.bar || '#1d9e75');
+    legend.innerHTML = '';
+    summary.innerHTML = '';
+    chart = new Chart(document.getElementById('divChart'), {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: 'var(--surface)' }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 12 } },
+          tooltip: { callbacks: { label: ctx => ctx.label + ': ' + fmtMoney(ctx.parsed) + ' (' + (ctx.parsed / ctx.dataset.data.reduce((s,v)=>s+v,0)*100).toFixed(1) + '%)' } }
+        }
+      }
+    });
+    return;
+  }
+
+  if (currentTab === 'monthly') {
+    const labels = Array.from({length:12}, (_,i) => {
+      const mIdx = (startMonth - 1 + i) % 12;
+      const yr = startYear + Math.floor((startMonth - 1 + i) / 12);
+      return MONTH_NAMES[mIdx] + (yr !== startYear ? ' '+String(yr).slice(2) : '');
+    });
+    const netTotals = monthlyTotals.map(v => parseFloat(netDiv(v).toFixed(2)));
+    legend.innerHTML = `
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#1d9e75"></span>Brut</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#378add"></span>Net (${settings.tax}%)</span>`;
+    summary.innerHTML = '';
+    chart = new Chart(document.getElementById('divChart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Brut (€)', data: monthlyTotals.map(v => parseFloat(v.toFixed(2))), backgroundColor: '#1d9e7566', borderColor: '#1d9e75', borderWidth: 1, borderRadius: 4 },
+          { label: 'Net (€)', data: netTotals, backgroundColor: '#378add55', borderColor: '#378add', borderWidth: 1, borderRadius: 4 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtMoney(ctx.parsed.y) } } },
+        scales: {
+          x: { ticks: { autoSkip: false, maxRotation: 30, font: { size: 11 } }, grid: { display: false } },
+          y: { ticks: { callback: v => v.toFixed(0) + ' €', font: { size: 11 } }, grid: { color: 'rgba(136,135,128,.12)' } }
+        }
+      }
+    });
+    return;
+  }
+
+  // Multi-year projections
+  const years = currentTab === '3y' ? 3 : currentTab === '5y' ? 5 : 10;
+  const yLabels = [];
+  const yGross = [];
+  const yNet = [];
+  const yCapital = [];
+
+  for (let y = 0; y < years; y++) {
+    let annualDiv = 0;
+    let totalCap = 0;
+    assets.forEach(a => {
+      const cap = a.capital + a.dca * 12 * (y + 1);
+      totalCap += cap;
+      annualDiv += cap * a.yld / 100;
+    });
+    yLabels.push('An ' + (y + 1));
+    yGross.push(parseFloat(annualDiv.toFixed(2)));
+    yNet.push(parseFloat(netDiv(annualDiv).toFixed(2)));
+    yCapital.push(parseFloat(totalCap.toFixed(2)));
+  }
+
+  const finalGross = yGross[yGross.length - 1];
+  const finalNet = yNet[yNet.length - 1];
+  const finalCap = yCapital[yCapital.length - 1];
+  summary.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:10px;background:var(--surface2);border-radius:var(--radius-sm);">
+      <div><div style="font-size:11px;color:var(--text3);">Capital dans ${years} ans</div><div style="font-weight:500;">${fmtMoney(finalCap, 0)}</div></div>
+      <div><div style="font-size:11px;color:var(--text3);">Div. bruts / an</div><div style="font-weight:500;color:var(--green);">${fmtMoney(finalGross)}</div></div>
+      <div><div style="font-size:11px;color:var(--text3);">Div. nets / mois</div><div style="font-weight:500;color:var(--blue);">${fmtMoney(finalNet/12)}</div></div>
+    </div>
+    ${settings.target > 0 ? `<div style="font-size:12px;color:var(--text2);margin-top:8px;">Objectif ${fmtMoney(settings.target)}/mois net : ${finalNet/12 >= settings.target ? '<span style="color:var(--green)">✓ Atteint dans ' + years + ' ans</span>' : '<span style="color:var(--amber)">Non atteint — ' + fmtMoney(finalNet/12) + '/mois projeté</span>'}</div>` : ''}`;
+
+  legend.innerHTML = `
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#1d9e75"></span>Div. bruts</span>
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#378add"></span>Div. nets</span>
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#ba751755;border:.5px solid #ba7517"></span>Capital total</span>`;
+
   chart = new Chart(document.getElementById('divChart'), {
     type: 'bar',
     data: {
-      labels,
-      datasets: [{
-        label: 'Dividendes (€)',
-        data: totals.map(v => parseFloat(v.toFixed(2))),
-        backgroundColor: bgColors,
-        borderColor: borderColors,
-        borderWidth: 1,
-        borderRadius: 4,
-      }]
+      labels: yLabels,
+      datasets: [
+        { label: 'Capital (€)', data: yCapital, backgroundColor: '#ba751722', borderColor: '#ba7517', borderWidth: 1, borderRadius: 4, yAxisID: 'y2' },
+        { label: 'Div. bruts (€)', data: yGross, backgroundColor: '#1d9e7566', borderColor: '#1d9e75', borderWidth: 1, borderRadius: 4, yAxisID: 'y1' },
+        { label: 'Div. nets (€)', data: yNet, backgroundColor: '#378add55', borderColor: '#378add', borderWidth: 1, borderRadius: 4, yAxisID: 'y1' }
+      ]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: ctx => ctx.parsed.y > 0 ? fmtMoney(ctx.parsed.y) : 'Aucun versement'
-          }
-        }
-      },
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtMoney(ctx.parsed.y) } } },
       scales: {
-        x: { ticks: { autoSkip: false, maxRotation: 30, font: { size: 11 } }, grid: { display: false } },
-        y: {
-          ticks: { callback: v => v.toFixed(0) + ' €', font: { size: 11 } },
-          grid: { color: 'rgba(136,135,128,0.12)' }
-        }
+        x: { grid: { display: false } },
+        y1: { position: 'left', ticks: { callback: v => v.toFixed(0) + ' €', font: { size: 11 } }, grid: { color: 'rgba(136,135,128,.12)' } },
+        y2: { position: 'right', ticks: { callback: v => (v/1000).toFixed(0) + 'k €', font: { size: 11 } }, grid: { display: false } }
       }
     }
   });
 }
 
-// ── TRADE REPUBLIC CSV IMPORT ─────────────────────────────────────────────
+// ── MONTH PANEL ───────────────────────────────────────────────────────────
+function openMonthPanel(monthIdx) {
+  const now = new Date();
+  const startMonth = now.getMonth() + 1;
+  const startYear = now.getFullYear();
+  const mIdx = (startMonth - 1 + monthIdx) % 12;
+  const mYear = startYear + Math.floor((startMonth - 1 + monthIdx) / 12);
+  document.getElementById('panel-month-title').textContent = MONTH_NAMES_LONG[mIdx] + ' ' + mYear;
 
+  let totalVal = 0, totalDiv = 0;
+  const rows = assets.map(a => {
+    const cap = a.capital + a.dca * (monthIdx + 1);
+    totalVal += cap;
+    const mNum = ((startMonth - 1 + monthIdx) % 12) + 1;
+    const hasPayout = a.months.includes(mNum);
+    const div = hasPayout ? (cap * a.yld / 100) / a.months.length : 0;
+    totalDiv += div;
+    const gain = a.dca * (monthIdx + 1);
+    return { a, cap, gain, div, hasPayout };
+  });
+
+  document.getElementById('panel-total-val').textContent = fmtMoney(totalVal, 0);
+  document.getElementById('panel-div-val').textContent = totalDiv > 0
+    ? 'Brut : ' + fmtMoney(totalDiv) : 'Aucun dividende ce mois';
+  document.getElementById('panel-net-val').textContent = totalDiv > 0
+    ? 'Net (' + settings.tax + '%) : ' + fmtMoney(netDiv(totalDiv)) : '';
+
+  document.getElementById('panel-positions').innerHTML = rows.map(r => `
+    <div style="border:.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;background:var(--surface2);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="width:8px;height:8px;border-radius:50%;background:${COLOR_MAP[r.a.color]?.bar||'#1d9e75'};display:inline-block;"></span>
+          <span style="font-size:13px;font-weight:500;">${r.a.name}</span>
+        </div>
+        ${r.hasPayout?`<span style="font-size:11px;padding:2px 7px;border-radius:20px;background:var(--green-bg);color:var(--green-text);">div. ${fmtMoney(r.div)} · net ${fmtMoney(netDiv(r.div))}</span>`:''}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+        <div><div style="font-size:10px;color:var(--text3);margin-bottom:1px;">Valorisation</div><div style="font-size:14px;font-weight:500;">${fmtMoney(r.cap, 0)}</div></div>
+        <div><div style="font-size:10px;color:var(--text3);margin-bottom:1px;">Capital initial</div><div style="font-size:13px;color:var(--text2);">${fmtMoney(r.a.capital, 0)}</div></div>
+        <div><div style="font-size:10px;color:var(--text3);margin-bottom:1px;">DCA cumulé</div><div style="font-size:13px;color:var(--green);">+${fmtMoney(r.gain, 0)}</div></div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('month-panel').style.display = 'block';
+  document.getElementById('month-panel-overlay').style.display = 'block';
+}
+function closeMonthPanel() {
+  document.getElementById('month-panel').style.display = 'none';
+  document.getElementById('month-panel-overlay').style.display = 'none';
+}
+
+// ── TR CSV IMPORT ─────────────────────────────────────────────────────────
 function parseCSV(text) {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
   if (lines.length < 2) return [];
   const headers = splitCSVLine(lines[0]).map(h => h.replace(/^"|"$/g,'').trim());
   return lines.slice(1).map(line => {
     const vals = splitCSVLine(line).map(v => v.replace(/^"|"$/g,'').trim());
-    const obj = {};
-    headers.forEach((h,i) => obj[h] = vals[i] || '');
-    return obj;
+    const obj = {}; headers.forEach((h,i) => obj[h] = vals[i]||''); return obj;
   });
 }
-
 function splitCSVLine(line) {
-  const result = []; let cur = ''; let inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (c === '"') { inQ = !inQ; }
-    else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
-    else { cur += c; }
+  const result=[]; let cur=''; let inQ=false;
+  for (let i=0;i<line.length;i++) {
+    const c=line[i];
+    if(c==='"'){inQ=!inQ;} else if(c===','&&!inQ){result.push(cur);cur='';} else{cur+=c;}
   }
-  result.push(cur);
-  return result;
+  result.push(cur); return result;
 }
-
 function importTR(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+  const file = e.target.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = ev => {
-    try {
-      const rows = parseCSV(ev.target.result);
-      processTRRows(rows);
-    } catch(err) { alert('Erreur lecture CSV: ' + err.message); }
+    try { processTRRows(parseCSV(ev.target.result)); }
+    catch(err) { alert('Erreur CSV: ' + err.message); }
   };
-  reader.readAsText(file, 'utf-8');
-  e.target.value = '';
+  reader.readAsText(file,'utf-8'); e.target.value='';
 }
-
 function processTRRows(rows) {
-  // 1. Calcul des parts actuelles par ISIN (BUY/SELL/SPLIT/MIGRATION)
-  const holdings = {};
-  const invested = {};
-  const namesMap = {};
+  const holdings={}, invested={}, namesMap={};
   rows.forEach(r => {
-    const sym = (r.symbol || '').trim();
-    if (!sym) return;
-    const t = (r.type || '').toUpperCase().trim();
-    const shares = parseFloat(r.shares || 0);
-    const amount = Math.abs(parseFloat(r.amount || 0));
-    const name = (r.name || '').trim();
-    if (name) namesMap[sym] = name;
-    if (!holdings[sym]) { holdings[sym] = 0; invested[sym] = 0; }
-    if (t === 'BUY') { holdings[sym] += shares; invested[sym] += amount; }
-    else if (t === 'SELL') { holdings[sym] += shares; }
-    else if (t === 'SPLIT' || t === 'MIGRATION') { holdings[sym] += shares; }
+    const sym=(r.symbol||'').trim(); if(!sym) return;
+    const t=(r.type||'').toUpperCase().trim();
+    const shares=parseFloat(r.shares||0), amount=Math.abs(parseFloat(r.amount||0));
+    const name=(r.name||'').trim(); if(name) namesMap[sym]=name;
+    if(!holdings[sym]){holdings[sym]=0;invested[sym]=0;}
+    if(t==='BUY'){holdings[sym]+=shares;invested[sym]+=amount;}
+    else if(t==='SELL'){holdings[sym]+=shares;}
+    else if(t==='SPLIT'||t==='MIGRATION'){holdings[sym]+=shares;}
   });
-
-  // 2. Lignes dividende uniquement
-  const divRows = rows.filter(r => {
-    const type = (r.type || '').toUpperCase().trim();
-    const desc = (r.description || '').toLowerCase();
-    return type === 'DIVIDEND' || type === 'DIVIDENDS' || desc.includes('dividend');
+  const divRows=rows.filter(r=>(r.type||'').toUpperCase().trim()==='DIVIDEND'||(r.description||'').toLowerCase().includes('dividend'));
+  if(divRows.length===0){alert('Aucun dividende trouvé dans ce fichier.');return;}
+  const bySymbol={};
+  divRows.forEach(r=>{
+    const isin=(r.symbol||'').trim(), name=(r.name||isin||'').trim(), key=isin||name;
+    const amount=Math.abs(parseFloat((r.amount||'0').replace(',','.')));
+    const date=(r.date||(r.datetime||'').slice(0,10)||'').slice(0,10);
+    if(!key) return;
+    if(!bySymbol[key]) bySymbol[key]={sym:isin,name,payments:[]};
+    bySymbol[key].payments.push({amount,date});
   });
-
-  if (divRows.length === 0) {
-    alert('Aucun dividende trouve dans ce fichier CSV.\nVerifie que tu as bien selectionne un export Trade Republic complet.');
-    return;
-  }
-
-  // 3. Groupe par ISIN
-  const bySymbol = {};
-  divRows.forEach(r => {
-    const isin = (r.symbol || '').trim();
-    const name = (r.name || isin || '').trim();
-    const key = isin || name;
-    const amount = Math.abs(parseFloat((r.amount || '0').replace(',','.'))) || 0;
-    const date = (r.date || (r.datetime || '').slice(0,10) || '').slice(0,10);
-    if (!key) return;
-    if (!bySymbol[key]) bySymbol[key] = { sym: isin, name, payments: [] };
-    bySymbol[key].payments.push({ amount, date });
+  const cutoff=new Date(); cutoff.setFullYear(cutoff.getFullYear()-1);
+  const detected=[], soldSkipped=[];
+  Object.values(bySymbol).forEach(entry=>{
+    const sh=holdings[entry.sym]||0;
+    if(sh<0.001){soldSkipped.push(entry.name);return;}
+    const payments=entry.payments.sort((a,b)=>a.date.localeCompare(b.date));
+    const last12=payments.filter(p=>new Date(p.date)>=cutoff);
+    const annualDiv=last12.reduce((s,p)=>s+p.amount,0);
+    const freq=payments.length>=10?'monthly':payments.length>=4?'quarterly2':payments.length>=2?'semi':'annual';
+    detected.push({sym:entry.sym,name:entry.name,annualDiv,payments,freq,totalPayments:payments.length,capitalEst:Math.round(invested[entry.sym]||0),shares:sh});
   });
-
-  // 4. Build detected list — skip if sold (shares <= 0.001)
-  const cutoff = new Date(); cutoff.setFullYear(cutoff.getFullYear() - 1);
-  const detected = [];
-  const soldSkipped = [];
-
-  Object.values(bySymbol).forEach(entry => {
-    const sh = holdings[entry.sym] || 0;
-    if (sh < 0.001) { soldSkipped.push(entry.name); return; }
-
-    const payments = entry.payments.sort((a,b) => a.date.localeCompare(b.date));
-    const last12 = payments.filter(p => new Date(p.date) >= cutoff);
-    const annualDiv = last12.reduce((s,p) => s + p.amount, 0);
-    const capitalEst = Math.round(invested[entry.sym] || 0);
-
-    const freq = payments.length >= 10 ? 'monthly'
-               : payments.length >= 4  ? 'quarterly2'
-               : payments.length >= 2  ? 'semi'
-               : 'annual';
-
-    detected.push({ sym: entry.sym, name: entry.name, annualDiv, payments, freq, totalPayments: payments.length, capitalEst, shares: sh });
-  });
-
   renderTRModal(detected, soldSkipped);
 }
 function renderTRModal(detected, soldSkipped) {
-  loadFinnhubKey();
-  loadEodhdKey();
-  loadCfWorkerUrl();
-  const MN = ['Jan','Fev','Mar','Avr','Mai','Juin','Juil','Aout','Sep','Oct','Nov','Dec'];
-  const el = document.getElementById('tr-results');
-  let html = '';
-
-  if (detected.length === 0) {
-    html += '<p style="color:var(--text2);font-size:13px;margin-bottom:10px;">Tous les actifs avec dividendes ont ete vendus ou aucun trouve.</p>';
-  }
-
-  detected.forEach((d, i) => {
-    const capVal = d.capitalEst || 0;
-    const yldGuess = capVal > 0 && d.annualDiv > 0 ? ((d.annualDiv/capVal)*100).toFixed(2) : '';
-    const freqOpts = [
-      ['monthly','Mensuel'],['quarterly','Trim. (mar…)'],['quarterly2','Trim. (jan…)'],
-      ['semi','Semestriel'],['annual','Annuel'],['custom','Personnalise']
-    ].map(([v,l]) => `<option value="${v}" ${d.freq===v?'selected':''}>${l}</option>`).join('');
-
-    const monthPicker = MN.map((m,mi) => `
-      <label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 7px;border:0.5px solid var(--border2);border-radius:20px;cursor:pointer;background:var(--surface);color:var(--text2);" id="tr-mlbl-${i}-${mi+1}">
-        <input type="checkbox" value="${mi+1}" style="display:none;" onchange="trToggleMonth(${i},${mi+1},this)">${m}
-      </label>`).join('');
-
-    html += `
-    <div style="border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:12px;margin-bottom:10px;background:var(--surface2);">
+  loadFinnhubKey(); loadEodhdKey();
+  const MN=['Jan','Fev','Mar','Avr','Mai','Juin','Juil','Aout','Sep','Oct','Nov','Dec'];
+  const el=document.getElementById('tr-results');
+  let html='';
+  detected.forEach((d,i)=>{
+    const capVal=d.capitalEst||0;
+    const yldGuess=capVal>0&&d.annualDiv>0?((d.annualDiv/capVal)*100).toFixed(2):'';
+    const freqOpts=[['monthly','Mensuel'],['quarterly','Trim.(mar)'],['quarterly2','Trim.(jan)'],['semi','Semestriel'],['annual','Annuel'],['custom','Personnalisé']].map(([v,l])=>`<option value="${v}" ${d.freq===v?'selected':''}>${l}</option>`).join('');
+    const monthPicker=MN.map((m,mi)=>`<label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 7px;border:.5px solid var(--border2);border-radius:20px;cursor:pointer;background:var(--surface);color:var(--text2);" id="tr-mlbl-${i}-${mi+1}"><input type="checkbox" value="${mi+1}" style="display:none;" onchange="trToggleMonth(${i},${mi+1},this)">${m}</label>`).join('');
+    html+=`<div style="border:.5px solid var(--border2);border-radius:var(--radius-sm);padding:12px;margin-bottom:10px;background:var(--surface2);">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;">
         <div style="min-width:160px;">
           <div style="font-size:13px;font-weight:500;">${d.name}</div>
-          <div style="font-size:11px;color:var(--text3);">${d.sym} · ${d.shares.toFixed(4)} parts · ${d.totalPayments} versement(s) TR</div>
-          ${d.annualDiv>0 ? `<div style="font-size:12px;color:var(--green);margin-top:3px;">Div. TR (12m): ${d.annualDiv.toFixed(2)} €</div>` : '<div style="font-size:11px;color:var(--text3);margin-top:3px;">Pas de versement dans les 12 derniers mois</div>'}
+          <div style="font-size:11px;color:var(--text3);">${d.sym} · ${d.shares.toFixed(4)} parts · ${d.totalPayments} versement(s)</div>
+          ${d.annualDiv>0?`<div style="font-size:12px;color:var(--green);margin-top:3px;">Div. TR (12m): ${d.annualDiv.toFixed(2)} €</div>`:'<div style="font-size:11px;color:var(--text3);margin-top:3px;">Pas de versement sur 12 mois</div>'}
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
-          <div class="field" style="min-width:110px;">
-            <label style="font-size:11px;color:var(--text3);">Capital investi (€)</label>
-            <input type="number" id="tr-cap-${i}" value="${capVal}" step="10" min="0"
-              style="font-size:12px;padding:5px 8px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;"
-              oninput="trRecalcYield(${i},${d.annualDiv})">
-          </div>
-          <div class="field" style="min-width:90px;">
-            <label style="font-size:11px;color:var(--text3);">DCA/mois (€)</label>
-            <input type="number" id="tr-dca-${i}" value="0" step="10" min="0"
-              style="font-size:12px;padding:5px 8px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
-          </div>
-          <div class="field" style="min-width:90px;">
-            <label style="font-size:11px;color:var(--text3);">Rendement % <span style="color:var(--text3);font-weight:400;">(modifiable)</span></label>
-            <input type="number" id="tr-yield-${i}" value="${yldGuess}" step="0.1" min="0" placeholder="ex: 4.5"
-              style="font-size:12px;padding:5px 8px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
-          </div>
-          <div class="field" style="min-width:120px;">
-            <label style="font-size:11px;color:var(--text3);">Frequence</label>
-            <select id="tr-freq-${i}" onchange="trOnFreqChange(${i})"
-              style="font-size:12px;padding:5px 8px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
-              ${freqOpts}
-            </select>
-          </div>
+          <div class="field" style="min-width:100px;"><label style="font-size:11px;color:var(--text3);">Capital (€)</label><input type="number" id="tr-cap-${i}" value="${capVal}" step="10" min="0" style="font-size:12px;padding:5px 8px;border:.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;" oninput="trRecalcYield(${i},${d.annualDiv})"></div>
+          <div class="field" style="min-width:80px;"><label style="font-size:11px;color:var(--text3);">DCA/mois (€)</label><input type="number" id="tr-dca-${i}" value="0" step="10" min="0" style="font-size:12px;padding:5px 8px;border:.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;"></div>
+          <div class="field" style="min-width:80px;"><label style="font-size:11px;color:var(--text3);">Rdt % (modifiable)</label><input type="number" id="tr-yield-${i}" value="${yldGuess}" step="0.1" min="0" placeholder="ex:4.5" style="font-size:12px;padding:5px 8px;border:.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;"></div>
+          <div class="field" style="min-width:110px;"><label style="font-size:11px;color:var(--text3);">Fréquence</label><select id="tr-freq-${i}" onchange="trOnFreqChange(${i})" style="font-size:12px;padding:5px 8px;border:.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">${freqOpts}</select></div>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
-          <button id="enrich-btn-${i}" class="btn btn-sm" onclick="enrichWithFinnhub(${i},'${d.sym}','${d.name.replace(/'/g,'').replace(/"/g,'')}')"
-            style="color:#7f77dd;border-color:#7f77dd44;white-space:nowrap;">
-            ✦ Enrichir via API
-          </button>
-          <button class="btn btn-sm btn-primary" id="tr-add-btn-${i}"
-            onclick="addTRAsset(${i})"
-            style="white-space:nowrap;">
-            + Ajouter
-          </button>
+          <button id="enrich-btn-${i}" class="btn btn-sm" onclick="enrichWithFinnhub(${i},'${d.sym}','${d.name.replace(/'/g,'').replace(/"/g,'')}') " style="color:#7f77dd;border-color:#7f77dd44;">✦ Enrichir via API</button>
+          <button class="btn btn-sm btn-primary" id="tr-add-btn-${i}" onclick="addTRAsset(${i})">+ Ajouter</button>
         </div>
       </div>
       <div id="enrich-status-${i}" style="font-size:11px;margin-top:6px;"></div>
-      <div id="tr-mpicker-${i}" style="display:none;flex-wrap:wrap;gap:4px;margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);">
-        <span style="font-size:11px;color:var(--text3);width:100%;margin-bottom:3px;">Mois de versement (personnalise)</span>
-        ${monthPicker}
+      <div id="tr-mpicker-${i}" style="display:none;flex-wrap:wrap;gap:4px;margin-top:8px;padding-top:8px;border-top:.5px solid var(--border);">
+        <span style="font-size:11px;color:var(--text3);width:100%;margin-bottom:3px;">Mois personnalisés</span>${monthPicker}
       </div>
-      <div style="font-size:11px;color:var(--text3);margin-top:6px;padding-top:6px;border-top:0.5px solid var(--border);">
-        ${d.payments.slice(-5).map(p => `<span style="margin-right:10px;">${p.date} → ${p.amount.toFixed(2)} €</span>`).join('')}
-        ${d.payments.length > 5 ? `<span>+${d.payments.length-5} autres</span>` : ''}
+      <div style="font-size:11px;color:var(--text3);margin-top:6px;padding-top:6px;border-top:.5px solid var(--border);">
+        ${d.payments.slice(-5).map(p=>`<span style="margin-right:10px;">${p.date} → ${p.amount.toFixed(2)} €</span>`).join('')}${d.payments.length>5?`<span>+${d.payments.length-5} autres</span>`:''}
       </div>
     </div>`;
   });
-
-  if (soldSkipped && soldSkipped.length > 0) {
-    html += `<div style="font-size:12px;color:var(--text3);margin-top:10px;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);">
-      <strong>Vendus / exclus :</strong> ${soldSkipped.join(', ')}
-    </div>`;
-  }
-
-  el.innerHTML = html;
-  document.getElementById('tr-modal').style.display = 'block';
-  document.getElementById('tr-modal').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if(soldSkipped&&soldSkipped.length>0) html+=`<div style="font-size:12px;color:var(--text3);margin-top:10px;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);"><strong>Vendus / exclus :</strong> ${soldSkipped.join(', ')}</div>`;
+  el.innerHTML=html;
+  document.getElementById('tr-modal').style.display='block';
+  document.getElementById('tr-modal').scrollIntoView({behavior:'smooth',block:'start'});
 }
-
-function trRecalcYield(idx, annualDiv) {
-  const cap = parseFloat((document.getElementById('tr-cap-'+idx)||{}).value) || 0;
-  const yldEl = document.getElementById('tr-yield-'+idx);
-  if (cap > 0 && annualDiv > 0 && yldEl) {
-    yldEl.value = ((annualDiv/cap)*100).toFixed(2);
-  }
+function trRecalcYield(idx,annualDiv){
+  const cap=parseFloat((document.getElementById('tr-cap-'+idx)||{}).value)||0;
+  const el=document.getElementById('tr-yield-'+idx);
+  if(cap>0&&annualDiv>0&&el) el.value=((annualDiv/cap)*100).toFixed(2);
 }
-
-function trOnFreqChange(idx) {
-  const freq = document.getElementById('tr-freq-'+idx).value;
-  const picker = document.getElementById('tr-mpicker-'+idx);
-  if (picker) picker.style.display = freq === 'custom' ? 'flex' : 'none';
+function trOnFreqChange(idx){
+  const picker=document.getElementById('tr-mpicker-'+idx);
+  if(picker) picker.style.display=document.getElementById('tr-freq-'+idx).value==='custom'?'flex':'none';
 }
-
-function trToggleMonth(idx, month, cb) {
-  const lbl = document.getElementById('tr-mlbl-'+idx+'-'+month);
-  if (!lbl) return;
-  if (cb.checked) { lbl.style.background='var(--green-bg)'; lbl.style.color='var(--green-text)'; }
-  else { lbl.style.background='var(--surface)'; lbl.style.color='var(--text2)'; }
+function trToggleMonth(idx,month,cb){
+  const lbl=document.getElementById('tr-mlbl-'+idx+'-'+month); if(!lbl) return;
+  if(cb.checked){lbl.style.background='var(--green-bg)';lbl.style.color='var(--green-text)';}
+  else{lbl.style.background='var(--surface)';lbl.style.color='var(--text2)';}
 }
-function addTRAsset(i) {
-  const name   = (document.getElementById('tr-add-btn-'+i).closest('div[style]').querySelector('[style*="font-weight:500"]') || {textContent: 'Actif'}).textContent.trim() || 'Actif';
-  const capital = parseFloat((document.getElementById('tr-cap-'+i)||{}).value) || 0;
-  const dca     = parseFloat((document.getElementById('tr-dca-'+i)||{}).value) || 0;
-  const yld     = parseFloat((document.getElementById('tr-yield-'+i)||{}).value) || 0;
-  const freq    = (document.getElementById('tr-freq-'+i)||{}).value || 'annual';
-
-  if (capital === 0) { alert('Capital requis pour ' + name); document.getElementById('tr-cap-'+i).focus(); return; }
-  if (yld === 0)     { alert('Rendement requis pour ' + name + ' — entre-le manuellement ou clique Enrichir via API.'); document.getElementById('tr-yield-'+i).focus(); return; }
-
+function addTRAsset(i){
+  const card=document.getElementById('tr-add-btn-'+i)?.closest('div[style*="border:.5px"]');
+  const nameEl=card?.querySelector('[style*="font-weight:500"]');
+  const finalName=nameEl?nameEl.textContent.trim():('Actif '+i);
+  const capital=parseFloat(document.getElementById('tr-cap-'+i)?.value)||0;
+  const dca=parseFloat(document.getElementById('tr-dca-'+i)?.value)||0;
+  const yld=parseFloat(document.getElementById('tr-yield-'+i)?.value)||0;
+  const freq=document.getElementById('tr-freq-'+i)?.value||'annual';
+  if(capital===0){alert('Capital requis pour '+finalName);return;}
+  if(yld===0){alert('Rendement requis — entre-le manuellement ou clique Enrichir.');return;}
   let months;
-  if (freq === 'custom') {
-    const picker = document.getElementById('tr-mpicker-'+i);
-    months = picker ? Array.from(picker.querySelectorAll('input:checked')).map(cb=>parseInt(cb.value)) : [];
-    if (months.length === 0) { alert('Selectionne au moins un mois de versement.'); return; }
-  } else {
-    months = FREQ_MONTHS[freq];
-  }
-
-  // Get name from the card header (first bold div)
-  const card = document.getElementById('tr-add-btn-'+i) ? document.getElementById('tr-add-btn-'+i).closest('div[style*="border:0.5px"]') : null;
-  const nameEl = card ? card.querySelector('[style*="font-weight:500"]') : null;
-  const finalName = nameEl ? nameEl.textContent.trim() : ('Actif ' + i);
-
-  assets.push({ id: Date.now(), name: finalName, capital, dca, yld, freq, months, color: 'blue', trImported: true });
-  save();
-  render();
-  notify('Ajoute : ' + finalName);
-
-  const btn = document.getElementById('tr-add-btn-'+i);
-  if (btn) { btn.textContent = 'Ajoute'; btn.disabled = true; btn.style.opacity = '0.5'; }
+  if(freq==='custom'){
+    const picker=document.getElementById('tr-mpicker-'+i);
+    months=picker?Array.from(picker.querySelectorAll('input:checked')).map(cb=>parseInt(cb.value)):[];
+    if(months.length===0){alert('Sélectionne au moins un mois.');return;}
+  } else { months=FREQ_MONTHS[freq]; }
+  assets.push({id:Date.now(),name:finalName,capital,dca,yld,freq,months,color:'blue',trImported:true});
+  save(); render(); notify('Ajouté : '+finalName);
+  const btn=document.getElementById('tr-add-btn-'+i);
+  if(btn){btn.textContent='Ajouté ✓';btn.disabled=true;btn.style.opacity='0.5';}
 }
+function closeTrModal(){document.getElementById('tr-modal').style.display='none';}
 
-// ── FINNHUB API ENRICHMENT ────────────────────────────────────────────────
-
-const DEFAULT_FINNHUB_KEY = '';
-
-function saveFinnhubKey() {
-  const k = document.getElementById('finnhub-key').value.trim();
-  try { localStorage.setItem('finnhub_api_key', k); } catch(e) {}
+// ── FINNHUB / EODHD ───────────────────────────────────────────────────────
+const DEFAULT_FINNHUB_KEY='';
+function saveFinnhubKey(){try{localStorage.setItem('finnhub_api_key',document.getElementById('finnhub-key').value.trim());}catch(e){}}
+function loadFinnhubKey(){try{const k=localStorage.getItem('finnhub_api_key')||'';const el=document.getElementById('finnhub-key');if(el)el.value=k;return k;}catch(e){return '';}}
+function saveEodhdKey(){try{localStorage.setItem('eodhd_api_key',document.getElementById('eodhd-key').value.trim());}catch(e){}}
+function loadEodhdKey(){try{const k=localStorage.getItem('eodhd_api_key')||'';const el=document.getElementById('eodhd-key');if(el&&k)el.value=k;return k;}catch(e){return '';}}
+function updateRateBadge(n){
+  const b=document.getElementById('rate-badge');if(!b)return;
+  b.style.display='inline-block'; n=parseInt(n);
+  b.textContent=n+' req/min restantes';
+  b.style.background=n>30?'var(--green-bg)':n>10?'var(--amber-bg)':'var(--red-bg)';
+  b.style.color=n>30?'var(--green-text)':n>10?'var(--amber-text)':'var(--red)';
 }
-
-function loadFinnhubKey() {
-  try {
-    const stored = localStorage.getItem('finnhub_api_key') || '';
-    const k = stored || DEFAULT_FINNHUB_KEY;
-    const el = document.getElementById('finnhub-key');
-    if (el) el.value = k;
-    return k;
-  } catch(e) { return DEFAULT_FINNHUB_KEY; }
-}
-
-function saveEodhdKey() {
-  const k = document.getElementById('eodhd-key').value.trim();
-  try { localStorage.setItem('eodhd_api_key', k); } catch(e) {}
-}
-
-function loadEodhdKey() {
-  try {
-    const stored = localStorage.getItem('eodhd_api_key') || '';
-    const el = document.getElementById('eodhd-key');
-    if (el && stored) el.value = stored;
-    return stored;
-  } catch(e) { return ''; }
-}
-
-function saveCfWorkerUrl() {
-  const url = document.getElementById('cf-worker-url').value.trim();
-  try { localStorage.setItem('cf_worker_url', url); } catch(e) {}
-}
-
-function loadCfWorkerUrl() {
-  try {
-    const stored = localStorage.getItem('cf_worker_url') || '';
-    const el = document.getElementById('cf-worker-url');
-    if (el && stored) el.value = stored;
-    return stored;
-  } catch(e) { return ''; }
-}
-
-function updateRateBadge(remaining) {
-  const badge = document.getElementById('rate-badge');
-  if (!badge) return;
-  badge.style.display = 'inline-block';
-  const n = parseInt(remaining);
-  badge.textContent = n + ' req/min restantes';
-  if (n > 30) {
-    badge.style.background = 'var(--green-bg)'; badge.style.color = 'var(--green-text)'; badge.style.borderColor = 'var(--green-border)';
-  } else if (n > 10) {
-    badge.style.background = 'var(--amber-bg)'; badge.style.color = 'var(--amber-text)'; badge.style.borderColor = 'var(--amber)';
-  } else {
-    badge.style.background = 'var(--red-bg)'; badge.style.color = 'var(--red)'; badge.style.borderColor = 'var(--red)';
-  }
-}
-
-// Cloudflare Worker URL — a configurer apres deploiement
-async function proxyFetch(url) {
-  const CF_WORKER = (function() {
-    try { return localStorage.getItem('cf_worker_url') || ''; } catch(e) { return ''; }
-  })();
-  let target = url;
-  if (CF_WORKER) {
-    target = CF_WORKER + '?url=' + encodeURIComponent(url);
-  }
-  const res = await fetch(target);
-  const remaining = res.headers.get('X-Ratelimit-Remaining') || res.headers.get('x-ratelimit-remaining');
-  if (remaining !== null) updateRateBadge(remaining);
-  if (!res.ok) throw new Error('HTTP ' + res.status + ' — ' + (CF_WORKER ? '' : 'Configure le Worker Cloudflare dans les parametres'));
+async function proxyFetch(url){
+  const res=await fetch(url);
+  const rem=res.headers.get('X-Ratelimit-Remaining')||res.headers.get('x-ratelimit-remaining');
+  if(rem!==null)updateRateBadge(rem);
+  if(!res.ok)throw new Error('HTTP '+res.status);
   return res.json();
 }
-
-const finnhubFetch = proxyFetch;
-
-async function enrichWithFinnhub(idx, isin, name) {
-  const key = (document.getElementById('finnhub-key').value || '').trim() || DEFAULT_FINNHUB_KEY;
-  const btn = document.getElementById('enrich-btn-' + idx);
-  const statusEl = document.getElementById('enrich-status-' + idx);
-  if (btn) { btn.disabled = true; btn.textContent = '...'; }
-  if (statusEl) statusEl.textContent = 'Recherche du ticker...';
-
-  // Route: US -> Finnhub, others -> EODHD
-  if (!isin.startsWith('US')) {
-    await enrichWithEODHD(idx, isin, name);
-    return;
-  }
-
-  try {
-    // Step 1: ISIN -> ticker via profile2 (Finnhub, US only)
-    const profile = await finnhubFetch(
-      'https://finnhub.io/api/v1/stock/profile2?isin=' + encodeURIComponent(isin) + '&token=' + key
-    );
-
-    if (!profile || !profile.ticker) {
-      if (statusEl) statusEl.innerHTML = '<span style="color:var(--amber)">Non trouve sur Finnhub — entre le rendement manuellement</span>';
-      if (btn) { btn.textContent = 'Non trouve'; btn.disabled = false; }
-      return;
-    }
-
-    const ticker = profile.ticker;
-    if (statusEl) statusEl.textContent = ticker + ' — chargement metriques...';
-
-    // Step 2: basic financials for yield (free)
-    const metrics = await finnhubFetch(
-      'https://finnhub.io/api/v1/stock/metric?symbol=' + encodeURIComponent(ticker) + '&metric=all&token=' + key
-    );
-
-    const m = (metrics && metrics.metric) ? metrics.metric : {};
-    const yld = m.dividendYieldIndicatedAnnual || m['52WeekDividendYield'] || m.dividendYieldTTM || 0;
-
-    if (yld > 0) {
-      const yldEl = document.getElementById('tr-yield-' + idx);
-      if (yldEl) yldEl.value = yld.toFixed(2);
-    }
-
-    // Step 3: dates from TR history already available — detect from payments
-    // (dividend2 is premium, we use TR data instead)
-    const info = [];
-    if (yld > 0) info.push('rdt: ' + yld.toFixed(2) + '%');
-    info.push('ticker: ' + ticker);
-    info.push('dates: depuis historique TR');
-
-    if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">✓ ' + info.join(' · ') + (yld === 0 ? ' — rendement non disponible, entre-le manuellement' : '') + '</span>';
-    if (btn) btn.textContent = 'Enrichi ✓';
-
-  } catch(err) {
-    if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">Erreur: ' + err.message + '</span>';
-    if (btn) { btn.textContent = 'Erreur'; btn.disabled = false; }
+async function enrichWithFinnhub(idx,isin,name){
+  const key=(document.getElementById('finnhub-key').value||'').trim()||DEFAULT_FINNHUB_KEY;
+  const btn=document.getElementById('enrich-btn-'+idx);
+  const statusEl=document.getElementById('enrich-status-'+idx);
+  if(!isin.startsWith('US')){await enrichWithEODHD(idx,isin,name);return;}
+  if(btn){btn.disabled=true;btn.textContent='...';}
+  if(statusEl)statusEl.textContent='Recherche...';
+  try{
+    const profile=await proxyFetch('https://finnhub.io/api/v1/stock/profile2?isin='+encodeURIComponent(isin)+'&token='+key);
+    if(!profile||!profile.ticker){if(statusEl)statusEl.innerHTML='<span style="color:var(--amber)">Non trouvé — mode manuel</span>';if(btn){btn.textContent='Non trouvé';btn.disabled=false;}return;}
+    const ticker=profile.ticker;
+    if(statusEl)statusEl.textContent=ticker+' — métriques...';
+    const metrics=await proxyFetch('https://finnhub.io/api/v1/stock/metric?symbol='+encodeURIComponent(ticker)+'&metric=all&token='+key);
+    const m=(metrics&&metrics.metric)?metrics.metric:{};
+    const yld=m.dividendYieldIndicatedAnnual||m['52WeekDividendYield']||m.dividendYieldTTM||0;
+    if(yld>0){const el=document.getElementById('tr-yield-'+idx);if(el)el.value=yld.toFixed(2);}
+    if(statusEl)statusEl.innerHTML='<span style="color:var(--green)">✓ '+ticker+(yld>0?' · rdt: '+yld.toFixed(2)+'%':' · rendement non dispo, entre manuellement')+'</span>';
+    if(btn)btn.textContent='Enrichi ✓';
+  }catch(err){
+    if(statusEl)statusEl.innerHTML='<span style="color:var(--red)">Erreur: '+err.message+'</span>';
+    if(btn){btn.textContent='Erreur';btn.disabled=false;}
   }
 }
-
-// ── EODHD API (EU/FR/ETF) ────────────────────────────────────────────────
-
-// EODHD exchange suffix by ISIN country prefix
-const ISIN_TO_EXCHANGE = {
-  'FR': 'PA', 'DE': 'XETRA', 'NL': 'AS', 'IT': 'MI',
-  'ES': 'MC', 'BE': 'BR', 'PT': 'LS', 'FI': 'HE',
-  'IE': 'IR', 'GB': 'LSE', 'CH': 'SW', 'SE': 'ST',
-  'NO': 'OL', 'DK': 'CO', 'LU': 'XETRA', 'XS': 'XETRA'
-};
-
-async function enrichWithEODHD(idx, isin, name) {
-  const key = (document.getElementById('eodhd-key').value || '').trim();
-  const btn = document.getElementById('enrich-btn-' + idx);
-  const statusEl = document.getElementById('enrich-status-' + idx);
-
-  if (!key) {
-    if (statusEl) statusEl.innerHTML = '<span style="color:var(--amber)">Entre ta clé EODHD pour enrichir les actifs EU/FR.</span>';
-    if (btn) { btn.disabled = false; btn.textContent = 'Enrichir via API'; }
-    return;
-  }
-
-  if (btn) { btn.disabled = true; btn.textContent = '...'; }
-  if (statusEl) statusEl.textContent = 'Recherche EODHD...';
-
-  try {
-    // Step 1: search by ISIN to get ticker + exchange
-    const searchRes = await proxyFetch(
-      'https://eodhd.com/api/search/' + encodeURIComponent(isin) +
-      '?api_token=' + key + '&fmt=json&limit=5'
-    );
-    const results = searchRes;
-
-    if (!results || results.length === 0) {
-      if (statusEl) statusEl.innerHTML = '<span style="color:var(--amber)">Non trouve sur EODHD — entre le rendement manuellement.</span>';
-      if (btn) { btn.textContent = 'Non trouve'; btn.disabled = false; }
-      return;
+const ISIN_TO_EXCHANGE={'FR':'PA','DE':'XETRA','NL':'AS','IT':'MI','ES':'MC','BE':'BR','IE':'IR','GB':'LSE','CH':'SW','LU':'XETRA'};
+async function enrichWithEODHD(idx,isin,name){
+  const key=(document.getElementById('eodhd-key').value||'').trim();
+  const btn=document.getElementById('enrich-btn-'+idx);
+  const statusEl=document.getElementById('enrich-status-'+idx);
+  if(!key){if(statusEl)statusEl.innerHTML='<span style="color:var(--amber)">Entre ta clé EODHD pour les actifs EU/FR.</span>';if(btn){btn.disabled=false;btn.textContent='Enrichir via API';}return;}
+  if(btn){btn.disabled=true;btn.textContent='...';}
+  if(statusEl)statusEl.textContent='Recherche EODHD...';
+  try{
+    const searchRes=await fetch('https://eodhd.com/api/search/'+encodeURIComponent(isin)+'?api_token='+key+'&fmt=json&limit=5');
+    if(!searchRes.ok)throw new Error('HTTP '+searchRes.status);
+    const results=await searchRes.json();
+    if(!results||results.length===0){if(statusEl)statusEl.innerHTML='<span style="color:var(--amber)">Non trouvé sur EODHD — mode manuel.</span>';if(btn){btn.textContent='Non trouvé';btn.disabled=false;}return;}
+    const match=results.find(r=>r.ISIN===isin)||results[0];
+    const symbol=match.Code+'.'+(match.Exchange||ISIN_TO_EXCHANGE[isin.slice(0,2)]||'PA');
+    if(statusEl)statusEl.textContent=symbol+' — fondamentaux...';
+    const fundRes=await fetch('https://eodhd.com/api/fundamentals/'+encodeURIComponent(symbol)+'?api_token='+key+'&fmt=json&filter=Highlights,SplitsDividends');
+    if(!fundRes.ok)throw new Error('Fundamentals HTTP '+fundRes.status);
+    const fund=await fundRes.json();
+    const yld=fund.Highlights?.DividendYield?parseFloat(fund.Highlights.DividendYield)*100:0;
+    if(yld>0){const el=document.getElementById('tr-yield-'+idx);if(el)el.value=yld.toFixed(2);}
+    const divData=fund.SplitsDividends?.Dividends||{};
+    let months=[];
+    if(Object.keys(divData).length>0){
+      const recent=Object.values(divData).filter(d=>d.date).sort((a,b)=>a.date.localeCompare(b.date)).slice(-12);
+      months=[...new Set(recent.map(d=>new Date(d.date).getMonth()+1))].sort((a,b)=>a-b);
     }
-
-    // Pick best match (prefer same ISIN)
-    const match = results.find(r => r.ISIN === isin) || results[0];
-    const ticker = match.Code;
-    const exchange = match.Exchange || ISIN_TO_EXCHANGE[isin.slice(0,2)] || 'PA';
-    const symbol = ticker + '.' + exchange;
-
-    if (statusEl) statusEl.textContent = symbol + ' — chargement dividendes...';
-
-    // Step 2: fundamentals -> dividends + yield
-    const fundRes = await proxyFetch(
-      'https://eodhd.com/api/fundamentals/' + encodeURIComponent(symbol) +
-      '?api_token=' + key + '&fmt=json&filter=Highlights,SplitsDividends'
-    );
-    const fund = fundRes;
-
-    // Extract yield
-    const highlights = fund.Highlights || {};
-    const splitsdiv = fund.SplitsDividends || {};
-    const yld = highlights.DividendYield
-      ? (parseFloat(highlights.DividendYield) * 100)
-      : 0;
-    const divPerShare = highlights.DividendShare ? parseFloat(highlights.DividendShare) : 0;
-
-    if (yld > 0) {
-      const yldEl = document.getElementById('tr-yield-' + idx);
-      if (yldEl) yldEl.value = yld.toFixed(2);
-    }
-
-    // Extract dividend history -> detect payment months
-    const history = splitsdiv.NumberDividendsByYear || {};
-    const divHistory = splitsdiv.PayoutRatio ? splitsdiv : null;
-
-    // Try to get actual dividend dates from annual report
-    const annualDiv = fund.AnnualDividends || {};
-
-    // Build month list from splitsdiv data if available
-    let months = [];
-    const divData = splitsdiv.Dividends || {};
-    if (Object.keys(divData).length > 0) {
-      const recentDates = Object.values(divData)
-        .filter(d => d.date)
-        .sort((a,b) => a.date.localeCompare(b.date))
-        .slice(-12);
-      months = [...new Set(recentDates.map(d => new Date(d.date).getMonth() + 1))].sort((a,b)=>a-b);
-    }
-
-    if (months.length > 0) {
-      updateMonthPicker(idx, months);
-    }
-
-    const info = [];
-    if (yld > 0) info.push('rdt: ' + yld.toFixed(2) + '%');
-    if (divPerShare > 0) info.push('div/action: ' + divPerShare.toFixed(3));
-    if (months.length > 0) info.push('mois: [' + months.join(',') + ']');
-    info.push('ticker: ' + symbol);
-
-    if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">✓ ' + info.join(' · ') + '</span>';
-    if (btn) btn.textContent = 'Enrichi ✓';
-
-  } catch(err) {
-    if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">Erreur EODHD: ' + err.message + '</span>';
-    if (btn) { btn.textContent = 'Erreur'; btn.disabled = false; }
+    if(months.length>0)updateMonthPicker(idx,months);
+    const info=[]; if(yld>0)info.push('rdt: '+yld.toFixed(2)+'%'); if(months.length>0)info.push('mois: ['+months.join(',')+']'); info.push(symbol);
+    if(statusEl)statusEl.innerHTML='<span style="color:var(--green)">✓ '+info.join(' · ')+'</span>';
+    if(btn)btn.textContent='Enrichi ✓';
+  }catch(err){
+    if(statusEl)statusEl.innerHTML='<span style="color:var(--red)">Erreur EODHD: '+err.message+'</span>';
+    if(btn){btn.textContent='Erreur';btn.disabled=false;}
   }
 }
-
-
-function updateMonthPicker(idx, months) {
-  const freqSel = document.getElementById('tr-freq-' + idx);
-  const picker  = document.getElementById('tr-mpicker-' + idx);
-  if (!picker || !freqSel) return;
-  freqSel.value = 'custom';
-  picker.style.display = 'flex';
-  picker.querySelectorAll('input[type=checkbox]').forEach(cb => {
-    cb.checked = months.includes(parseInt(cb.value));
-    const lbl = cb.parentElement;
-    if (cb.checked) { lbl.style.background = 'var(--green-bg)'; lbl.style.color = 'var(--green-text)'; }
-    else { lbl.style.background = 'var(--surface)'; lbl.style.color = 'var(--text2)'; }
+function updateMonthPicker(idx,months){
+  const freqSel=document.getElementById('tr-freq-'+idx);
+  const picker=document.getElementById('tr-mpicker-'+idx);
+  if(!picker||!freqSel)return;
+  freqSel.value='custom'; picker.style.display='flex';
+  picker.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.checked=months.includes(parseInt(cb.value));
+    const lbl=cb.parentElement;
+    if(cb.checked){lbl.style.background='var(--green-bg)';lbl.style.color='var(--green-text)';}
+    else{lbl.style.background='var(--surface)';lbl.style.color='var(--text2)';}
   });
 }
-
-
-function closeTrModal() {
-  document.getElementById('tr-modal').style.display = 'none';
-}
-
-// ── MONTH DETAIL PANEL ───────────────────────────────────────────────────
-
-function openMonthPanel(monthIdx) {
-  const now = new Date();
-  const startMonth = now.getMonth() + 1;
-  const startYear  = now.getFullYear();
-  const mIdx  = (startMonth - 1 + monthIdx) % 12;
-  const mYear = startYear + Math.floor((startMonth - 1 + monthIdx) / 12);
-  const mName = MONTH_NAMES_LONG[mIdx] + ' ' + mYear;
-
-  document.getElementById('panel-month-title').textContent = mName;
-
-  // For each asset: capital at month monthIdx = capital + dca * (monthIdx+1)
-  let totalVal = 0;
-  let totalDiv = 0;
-  const rows = assets.map(a => {
-    const capitalAtMonth = a.capital + a.dca * (monthIdx + 1);
-    totalVal += capitalAtMonth;
-
-    // Dividende theorique recu ce mois-la si versement ce mois
-    const mNum = ((startMonth - 1 + monthIdx) % 12) + 1;
-    const hasPayout = a.months.includes(mNum);
-    const divThisMonth = hasPayout ? (capitalAtMonth * (a.yld / 100)) / a.months.length : 0;
-    totalDiv += divThisMonth;
-
-    const cm = COLOR_MAP[a.color] || COLOR_MAP.green;
-    const gain = capitalAtMonth - a.capital;
-    const gainPct = a.capital > 0 ? ((gain / a.capital) * 100).toFixed(1) : '0.0';
-
-    return { a, capitalAtMonth, gain, gainPct, divThisMonth, hasPayout, cm };
-  });
-
-  document.getElementById('panel-total-val').textContent = fmtMoney(totalVal, 0);
-  document.getElementById('panel-div-val').textContent =
-    totalDiv > 0
-      ? 'Dividendes ce mois : ' + fmtMoney(totalDiv)
-      : 'Aucun dividende ce mois';
-
-  document.getElementById('panel-positions').innerHTML = rows.map(r => `
-    <div style="border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;background:var(--surface2);">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="width:8px;height:8px;border-radius:50%;background:${COLOR_MAP[r.a.color]?.bar || '#1d9e75'};display:inline-block;"></span>
-          <span style="font-size:13px;font-weight:500;">${r.a.name}</span>
-        </div>
-        ${r.hasPayout ? `<span style="font-size:11px;padding:2px 7px;border-radius:20px;background:var(--green-bg);color:var(--green-text);">div. ${fmtMoney(r.divThisMonth)}</span>` : ''}
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
-        <div>
-          <div style="font-size:10px;color:var(--text3);margin-bottom:1px;">Valorisation</div>
-          <div style="font-size:14px;font-weight:500;">${fmtMoney(r.capitalAtMonth, 0)}</div>
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--text3);margin-bottom:1px;">Capital initial</div>
-          <div style="font-size:13px;color:var(--text2);">${fmtMoney(r.a.capital, 0)}</div>
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--text3);margin-bottom:1px;">DCA cumulé</div>
-          <div style="font-size:13px;color:${r.gain > 0 ? 'var(--green)' : 'var(--text2)'};">+${fmtMoney(r.gain, 0)}</div>
-        </div>
-      </div>
-      ${r.a.dca > 0 ? `<div style="margin-top:6px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;">
-        <div style="height:100%;width:${Math.min(100, (r.gain/(r.capitalAtMonth||1))*100).toFixed(1)}%;background:var(--green);border-radius:2px;"></div>
-      </div>` : ''}
-    </div>
-  `).join('');
-
-  document.getElementById('month-panel').style.display = 'block';
-  document.getElementById('month-panel-overlay').style.display = 'block';
-}
-
-function closeMonthPanel() {
-  document.getElementById('month-panel').style.display = 'none';
-  document.getElementById('month-panel-overlay').style.display = 'none';
-}
-
 
 load();
 render();
