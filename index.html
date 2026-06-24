@@ -989,7 +989,7 @@ function addTRAsset(i) {
 
 // ── FINNHUB API ENRICHMENT ────────────────────────────────────────────────
 
-const DEFAULT_FINNHUB_KEY = '';
+const DEFAULT_FINNHUB_KEY = 'd8tpni1r01qhcnk5erpgd8tpni1r01qhcnk5erq0';
 
 function saveFinnhubKey() {
   const k = document.getElementById('finnhub-key').value.trim();
@@ -1022,6 +1022,8 @@ function updateRateBadge(remaining) {
 }
 
 async function finnhubFetch(url) {
+  // Try direct first (works when served via http://localhost)
+  // Fallback to CORS proxy when opened as file://
   const res = await fetch(url);
   const remaining = res.headers.get('X-Ratelimit-Remaining') || res.headers.get('x-ratelimit-remaining');
   if (remaining !== null) updateRateBadge(remaining);
@@ -1037,72 +1039,41 @@ async function enrichWithFinnhub(idx, isin, name) {
   if (statusEl) statusEl.textContent = 'Recherche du ticker...';
 
   try {
-    // Step 1: ISIN -> ticker
+    // Step 1: ISIN -> ticker via profile2 (free)
     const profile = await finnhubFetch(
       'https://finnhub.io/api/v1/stock/profile2?isin=' + encodeURIComponent(isin) + '&token=' + key
     );
 
     if (!profile || !profile.ticker) {
-      if (statusEl) statusEl.innerHTML = '<span style="color:var(--amber)">Non trouve sur Finnhub — entre le rendement et les mois manuellement</span>';
-      if (btn) { btn.textContent = 'Non trouve'; }
+      if (statusEl) statusEl.innerHTML = '<span style="color:var(--amber)">Non trouve sur Finnhub — entre le rendement manuellement</span>';
+      if (btn) { btn.textContent = 'Non trouve'; btn.disabled = false; }
       return;
     }
 
     const ticker = profile.ticker;
-    if (statusEl) statusEl.textContent = 'Ticker: ' + ticker + ' — chargement dividendes...';
+    if (statusEl) statusEl.textContent = ticker + ' — chargement metriques...';
 
-    // Step 2: dividend history
-    const divData = await finnhubFetch(
-      'https://finnhub.io/api/v1/stock/dividend2?symbol=' + encodeURIComponent(ticker) + '&token=' + key
+    // Step 2: basic financials for yield (free)
+    const metrics = await finnhubFetch(
+      'https://finnhub.io/api/v1/stock/metric?symbol=' + encodeURIComponent(ticker) + '&metric=all&token=' + key
     );
 
-    const dividends = ((divData && divData.data) ? divData.data : [])
-      .filter(d => d.payDate || d.date)
-      .sort((a,b) => (a.payDate || a.date).localeCompare(b.payDate || b.date));
+    const m = (metrics && metrics.metric) ? metrics.metric : {};
+    const yld = m.dividendYieldIndicatedAnnual || m['52WeekDividendYield'] || m.dividendYieldTTM || 0;
 
-    if (!dividends || dividends.length === 0) {
-      // Fallback: basic financials for yield
-      const metrics = await finnhubFetch(
-        'https://finnhub.io/api/v1/stock/metric?symbol=' + encodeURIComponent(ticker) + '&metric=all&token=' + key
-      );
-      const yld = metrics && metrics.metric
-        ? (metrics.metric.dividendYieldIndicatedAnnual || metrics.metric['52WeekDividendYield'] || 0)
-        : 0;
-      if (yld > 0) {
-        const yldEl = document.getElementById('tr-yield-' + idx);
-        if (yldEl) yldEl.value = yld.toFixed(2);
-        if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">Rendement: ' + yld.toFixed(2) + '% — pas de dates precises disponibles</span>';
-      } else {
-        if (statusEl) statusEl.innerHTML = '<span style="color:var(--amber)">Aucun dividende trouve — entre les donnees manuellement</span>';
-      }
-      if (btn) btn.textContent = 'Enrichi';
-      return;
-    }
-
-    // Compute annualised yield from last 12 months
-    const cutoff = new Date(); cutoff.setFullYear(cutoff.getFullYear() - 1);
-    const last12 = dividends.filter(d => new Date(d.payDate || d.date) >= cutoff);
-    const annualAmt = last12.reduce((s,d) => s + (d.amount || 0), 0);
-
-    const cap = parseFloat((document.getElementById('tr-cap-' + idx) || {}).value) || 0;
-    if (cap > 0 && annualAmt > 0) {
-      const yld = ((annualAmt / cap) * 100).toFixed(2);
+    if (yld > 0) {
       const yldEl = document.getElementById('tr-yield-' + idx);
-      if (yldEl) yldEl.value = yld;
+      if (yldEl) yldEl.value = yld.toFixed(2);
     }
 
-    // Detect payment months from last 12 dividends
-    const recentMonths = [...new Set(
-      dividends.slice(-12).map(d => new Date(d.payDate || d.date).getMonth() + 1)
-    )].sort((a,b) => a-b);
+    // Step 3: dates from TR history already available — detect from payments
+    // (dividend2 is premium, we use TR data instead)
+    const info = [];
+    if (yld > 0) info.push('rdt: ' + yld.toFixed(2) + '%');
+    info.push('ticker: ' + ticker);
+    info.push('dates: depuis historique TR');
 
-    // Update frequency + custom month picker
-    updateMonthPicker(idx, recentMonths);
-
-    const lastDiv = dividends[dividends.length - 1];
-    const lastDate = lastDiv.payDate || lastDiv.date;
-    const lastAmt  = (lastDiv.amount || 0).toFixed(3);
-    if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">OK — ' + ticker + ' · ' + dividends.length + ' versements · dernier: ' + lastDate + ' (' + lastAmt + ') · mois: [' + recentMonths.join(',') + ']</span>';
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">✓ ' + info.join(' · ') + (yld === 0 ? ' — rendement non disponible, entre-le manuellement' : '') + '</span>';
     if (btn) btn.textContent = 'Enrichi ✓';
 
   } catch(err) {
