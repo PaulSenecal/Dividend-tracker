@@ -240,7 +240,7 @@
 <div class="app">
 
   <div class="top-bar">
-    <h1><span class="dot"></span> Dividend Tracker <span style="font-size:11px;font-weight:400;color:var(--text3);margin-left:6px;">v1.6</span></h1>
+    <h1><span class="dot"></span> Dividend Tracker <span style="font-size:11px;font-weight:400;color:var(--text3);margin-left:6px;">v1.7</span></h1>
     <div style="display:flex; align-items:center; gap:10px;">
       <div class="date-badge" id="date-badge"></div>
       <button class="btn btn-sm btn-export" onclick="exportJSON()" title="Exporter les données">
@@ -268,7 +268,9 @@
       </div>
       <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:1rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:16px;height:16px;flex-shrink:0;color:#7f77dd"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
-        <span style="font-size:12px;color:var(--text2);flex:1;min-width:200px;">Cle API Finnhub (optionnel) — enrichit le rendement et les dates de versement. <a href="https://finnhub.io/register" style="color:#7f77dd;">Obtenir une cle gratuite</a></span>
+        <span style="font-size:12px;color:var(--text2);flex:1;min-width:200px;">
+          APIs dividendes — <a href="https://finnhub.io/register" style="color:#7f77dd;">Finnhub</a> (US) · <a href="https://eodhd.com/register" style="color:#7f77dd;">EODHD</a> (EU/FR) · <a href="https://dash.cloudflare.com" style="color:#7f77dd;">Worker Cloudflare</a> requis (gratuit)
+        </span>
         <div style="display:flex;flex-direction:column;gap:6px;">
           <div style="display:flex;align-items:center;gap:6px;">
             <span style="font-size:11px;color:var(--text3);width:90px;">Finnhub (US)</span>
@@ -277,6 +279,10 @@
           <div style="display:flex;align-items:center;gap:6px;">
             <span style="font-size:11px;color:var(--text3);width:90px;">EODHD (EU/FR)</span>
             <input type="text" id="eodhd-key" placeholder="clé EODHD" style="font-size:12px;padding:4px 8px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:200px;" oninput="saveEodhdKey()">
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:11px;color:var(--text3);width:90px;">Worker URL</span>
+            <input type="text" id="cf-worker-url" placeholder="https://dividend-proxy.xxx.workers.dev" style="font-size:12px;padding:4px 8px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:300px;" oninput="saveCfWorkerUrl()">
           </div>
         </div>
         <div id="finnhub-status" style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:8px;"><span id="rate-badge" style="display:none;font-size:11px;padding:2px 8px;border-radius:20px;background:var(--surface2);border:0.5px solid var(--border2);">— req/min restantes</span></div>
@@ -559,12 +565,18 @@ function editAsset(id) {
   const showCustom = a.freq === 'custom';
   el.outerHTML = `
   <div style="border:1.5px solid var(--green);border-radius:var(--radius-sm);background:var(--green-bg);margin-bottom:6px;padding:10px 12px;" id="row-${id}">
-    <div style="display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 1fr 80px;gap:8px;align-items:center;margin-bottom:8px;">
+    <div style="display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr 1fr 1fr 80px;gap:8px;align-items:center;margin-bottom:8px;">
       <input id="e-name-${id}" value="${a.name}" placeholder="Nom" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
       <input id="e-capital-${id}" type="number" value="${a.capital}" placeholder="Capital €" step="50" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
       <input id="e-dca-${id}" type="number" value="${a.dca}" placeholder="DCA €" step="50" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
       <input id="e-yield-${id}" type="number" value="${a.yld}" placeholder="Rdt %" step="0.1" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
       <select id="e-freq-${id}" onchange="onEditFreqChange(${id})" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">${freqOpts}</select>
+      <select id="e-color-${id}" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;">
+        <option value="green" ${a.color==='green'?'selected':''}>Vert</option>
+        <option value="blue" ${a.color==='blue'?'selected':''}>Bleu</option>
+        <option value="amber" ${a.color==='amber'?'selected':''}>Ambre</option>
+        <option value="purple" ${a.color==='purple'?'selected':''}>Violet</option>
+      </select>
       <span style="display:flex;gap:4px;justify-content:flex-end;">
         <button class="btn btn-sm btn-save" onclick="saveAsset(${id})" title="Enregistrer">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="m5 13 4 4L19 7"/></svg>
@@ -613,7 +625,8 @@ function saveAsset(id) {
   } else {
     months = FREQ_MONTHS[freq];
   }
-  Object.assign(a, { name, capital, dca, yld, freq, months });
+  const color = (document.getElementById('e-color-'+id)||{}).value || a.color || 'green';
+  Object.assign(a, { name, capital, dca, yld, freq, months, color });
   save();
   render();
   notify('✓ ' + name + ' mis à jour');
@@ -855,6 +868,7 @@ function processTRRows(rows) {
 function renderTRModal(detected, soldSkipped) {
   loadFinnhubKey();
   loadEodhdKey();
+  loadCfWorkerUrl();
   const MN = ['Jan','Fev','Mar','Avr','Mai','Juin','Juil','Aout','Sep','Oct','Nov','Dec'];
   const el = document.getElementById('tr-results');
   let html = '';
@@ -1030,6 +1044,20 @@ function loadEodhdKey() {
   } catch(e) { return ''; }
 }
 
+function saveCfWorkerUrl() {
+  const url = document.getElementById('cf-worker-url').value.trim();
+  try { localStorage.setItem('cf_worker_url', url); } catch(e) {}
+}
+
+function loadCfWorkerUrl() {
+  try {
+    const stored = localStorage.getItem('cf_worker_url') || '';
+    const el = document.getElementById('cf-worker-url');
+    if (el && stored) el.value = stored;
+    return stored;
+  } catch(e) { return ''; }
+}
+
 function updateRateBadge(remaining) {
   const badge = document.getElementById('rate-badge');
   if (!badge) return;
@@ -1045,15 +1073,23 @@ function updateRateBadge(remaining) {
   }
 }
 
-async function finnhubFetch(url) {
-  // Try direct first (works when served via http://localhost)
-  // Fallback to CORS proxy when opened as file://
-  const res = await fetch(url);
+// Cloudflare Worker URL — a configurer apres deploiement
+async function proxyFetch(url) {
+  const CF_WORKER = (function() {
+    try { return localStorage.getItem('cf_worker_url') || ''; } catch(e) { return ''; }
+  })();
+  let target = url;
+  if (CF_WORKER) {
+    target = CF_WORKER + '?url=' + encodeURIComponent(url);
+  }
+  const res = await fetch(target);
   const remaining = res.headers.get('X-Ratelimit-Remaining') || res.headers.get('x-ratelimit-remaining');
   if (remaining !== null) updateRateBadge(remaining);
-  if (!res.ok) throw new Error('HTTP ' + res.status);
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' — ' + (CF_WORKER ? '' : 'Configure le Worker Cloudflare dans les parametres'));
   return res.json();
 }
+
+const finnhubFetch = proxyFetch;
 
 async function enrichWithFinnhub(idx, isin, name) {
   const key = (document.getElementById('finnhub-key').value || '').trim() || DEFAULT_FINNHUB_KEY;
@@ -1138,12 +1174,11 @@ async function enrichWithEODHD(idx, isin, name) {
 
   try {
     // Step 1: search by ISIN to get ticker + exchange
-    const searchRes = await fetch(
+    const searchRes = await proxyFetch(
       'https://eodhd.com/api/search/' + encodeURIComponent(isin) +
       '?api_token=' + key + '&fmt=json&limit=5'
     );
-    if (!searchRes.ok) throw new Error('HTTP ' + searchRes.status);
-    const results = await searchRes.json();
+    const results = searchRes;
 
     if (!results || results.length === 0) {
       if (statusEl) statusEl.innerHTML = '<span style="color:var(--amber)">Non trouve sur EODHD — entre le rendement manuellement.</span>';
@@ -1160,12 +1195,11 @@ async function enrichWithEODHD(idx, isin, name) {
     if (statusEl) statusEl.textContent = symbol + ' — chargement dividendes...';
 
     // Step 2: fundamentals -> dividends + yield
-    const fundRes = await fetch(
+    const fundRes = await proxyFetch(
       'https://eodhd.com/api/fundamentals/' + encodeURIComponent(symbol) +
       '?api_token=' + key + '&fmt=json&filter=Highlights,SplitsDividends'
     );
-    if (!fundRes.ok) throw new Error('Fundamentals HTTP ' + fundRes.status);
-    const fund = await fundRes.json();
+    const fund = fundRes;
 
     // Extract yield
     const highlights = fund.Highlights || {};
